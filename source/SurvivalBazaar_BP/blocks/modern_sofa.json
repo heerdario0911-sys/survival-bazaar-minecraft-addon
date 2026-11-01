@@ -1,5 +1,5 @@
 {
-  "format_version": "1.21.60",
+  "format_version": "1.21.0",
   "minecraft:block": {
     "description": {
       "identifier": "survivalbazaar:modern_sofa",
@@ -9,28 +9,18 @@
     },
     "components": {
       "minecraft:geometry": {
-        "identifier": "geometry.survivalbazaar.furniture_anchor"
+        "identifier": "geometry.survivalbazaar.modern_sofa"
       },
       "minecraft:material_instances": {
         "*": {
-          "texture": "furniture_anchor",
-          "render_method": "blend"
+          "texture": "sofa",
+          "render_method": "opaque"
         }
       },
-      "minecraft:collision_box": false,
-      "minecraft:selection_box": true,
       "minecraft:destructible_by_mining": {
-        "seconds_to_destroy": 1
+        "seconds_to_destroy": 1.0
       },
-      "minecraft:item_visual": {
-        "geometry": "minecraft:geometry.full_block",
-        "material_instances": {
-          "*": {
-            "texture": "sofa",
-            "render_method": "opaque"
-          }
-        }
-      },
+      "minecraft:collision_box": true,
       "minecraft:loot": "loot_tables/blocks/modern_sofa.json"
     }
   }

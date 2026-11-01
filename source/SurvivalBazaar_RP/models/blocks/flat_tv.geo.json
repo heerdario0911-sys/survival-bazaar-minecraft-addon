@@ -6,64 +6,32 @@
         "identifier": "geometry.survivalbazaar.flat_tv",
         "texture_width": 16,
         "texture_height": 16,
-        "visible_bounds_width": 4,
-        "visible_bounds_height": 3,
+        "visible_bounds_width": 2,
+        "visible_bounds_height": 2,
         "visible_bounds_offset": [
-          1,
-          1,
-          0.5
+          0,
+          0.5,
+          0
         ]
       },
       "bones": [
         {
           "name": "root",
           "pivot": [
-            0,
+            8,
             0,
             8
           ],
           "cubes": [
             {
               "origin": [
-                0,
-                0,
-                5
+                1,
+                1,
+                7
               ],
               "size": [
-                48,
-                30,
-                3
-              ],
-              "uv": [
-                0,
-                0
-              ]
-            },
-            {
-              "origin": [
-                3,
-                3,
-                4
-              ],
-              "size": [
-                42,
-                24,
-                1
-              ],
-              "uv": [
-                0,
-                0
-              ]
-            },
-            {
-              "origin": [
-                18,
-                -2,
-                6
-              ],
-              "size": [
+                14,
                 12,
-                2,
                 2
               ],
               "uv": [
@@ -73,13 +41,29 @@
             },
             {
               "origin": [
-                20,
-                -5,
+                2,
+                2,
                 6
               ],
               "size": [
-                8,
-                3,
+                12,
+                10,
+                1
+              ],
+              "uv": [
+                0,
+                0
+              ]
+            },
+            {
+              "origin": [
+                6,
+                0,
+                7
+              ],
+              "size": [
+                4,
+                1,
                 2
               ],
               "uv": [

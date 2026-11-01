@@ -1,4 +1,4 @@
-import { world, system, ItemStack, ItemTypes, CommandPermissionLevel, CustomCommandStatus, Player, PlayerPermissionLevel } from "@minecraft/server";
+import { world, system, ItemStack, ItemTypes, CommandPermissionLevel, CustomCommandStatus, Player } from "@minecraft/server";
 import { ActionFormData, ModalFormData, MessageFormData } from "@minecraft/server-ui";
 
 const CURRENCY = "€";
@@ -281,7 +281,7 @@ function buildCompleteCatalog() {
   const id = type?.id;
   if (typeof id !== "string" || !id.startsWith("minecraft:") || seen.has(id)) continue;
   const raw = id.slice("minecraft:".length);
-  if (technical.test(raw) || raw.endsWith("_spawn_egg") || raw === "mob_spawner") continue;
+  if (technical.test(raw)) continue;
   // Nur Einträge, die Bedrock als echtes Inventar-Item anlegen kann.
   try { new ItemStack(id, 1); } catch { continue; }
   const category = catalogCategory(id);
@@ -449,42 +449,6 @@ function removeItems(player, typeId, amount) {
   }
   return left === 0;
 }
-
-const CUSTOM_ITEM_ICONS = {
- "survivalbazaar:modern_sofa":"textures/blocks/sofa","survivalbazaar:flat_tv":"textures/blocks/tv",
- "survivalbazaar:wall_mirror":"textures/blocks/mirror","survivalbazaar:coffee_table":"textures/blocks/table",
- "survivalbazaar:modern_chair":"textures/blocks/chair","survivalbazaar:double_bed":"textures/blocks/bed",
- "survivalbazaar:fridge":"textures/blocks/fridge","survivalbazaar:dining_table":"textures/blocks/dining_table",
- "survivalbazaar:wardrobe":"textures/blocks/wardrobe","survivalbazaar:bookshelf":"textures/blocks/bookshelf",
- "survivalbazaar:floor_lamp":"textures/blocks/floor_lamp","survivalbazaar:armchair":"textures/blocks/armchair",
- "survivalbazaar:bar_counter":"textures/blocks/bar_counter","survivalbazaar:bar_stool":"textures/blocks/bar_stool",
- "survivalbazaar:grandfather_clock":"textures/blocks/grandfather_clock","survivalbazaar:hanging_guitar":"textures/blocks/hanging_guitar",
- "survivalbazaar:potted_plant":"textures/blocks/potted_plant","survivalbazaar:wall_shelf":"textures/blocks/wall_shelf","minecraft:mob_spawner":"textures/blocks/mob_spawner"
-};
-const VANILLA_ICON_ALIASES = {
- "cooked_beef":"beef_cooked","cooked_porkchop":"porkchop_cooked","cooked_chicken":"chicken_cooked",
- "cooked_mutton":"mutton_cooked","cooked_rabbit":"rabbit_cooked","golden_apple":"apple_golden",
- "enchanted_golden_apple":"apple_golden","baked_potato":"potato_baked","poisonous_potato":"potato_poisonous",
- "melon_slice":"melon","raw_iron":"iron_ore","raw_gold":"gold_ore","raw_copper":"copper_ore",
- "oak_log":"log_oak","spruce_log":"log_spruce","birch_log":"log_birch","jungle_log":"log_jungle",
- "acacia_log":"log_acacia","dark_oak_log":"log_big_oak","mangrove_log":"log_mangrove","cherry_log":"log_cherry",
- "oak_planks":"planks_oak","spruce_planks":"planks_spruce","birch_planks":"planks_birch",
- "jungle_planks":"planks_jungle","acacia_planks":"planks_acacia","dark_oak_planks":"planks_big_oak",
- "mangrove_planks":"planks_mangrove","cherry_planks":"planks_cherry",
- "oak_leaves":"leaves_oak","spruce_leaves":"leaves_spruce","birch_leaves":"leaves_birch",
- "jungle_leaves":"leaves_jungle","acacia_leaves":"leaves_acacia","dark_oak_leaves":"leaves_big_oak",
- "oak_sapling":"sapling_oak","spruce_sapling":"sapling_spruce","birch_sapling":"sapling_birch",
- "jungle_sapling":"sapling_jungle","acacia_sapling":"sapling_acacia","dark_oak_sapling":"sapling_big_oak"
-};
-function itemIconPath(id) {
- if (CUSTOM_ITEM_ICONS[id]) return CUSTOM_ITEM_ICONS[id];
- const raw=String(id).replace(/^minecraft:/,"");
- const alias=VANILLA_ICON_ALIASES[raw]||raw;
- const blockLike=catalogCategory(id)==="Blöcke und Baumaterial" ||
-  /_block$|_log$|_wood$|_planks$|_ore$|_stone$|_bricks$|_wool$|_concrete$|_terracotta$|_glass$|_leaves$|_sapling$|_stairs$|_slab$|_fence$|_door$|_trapdoor$|_wall$|_bed$|_banner$|_carpet$|_candle$|_shulker_box$|^torch$|^lantern$|^flower_pot$|^scaffolding$|^ladder$|^chain$|^iron_bars$/.test(raw);
- return (blockLike?"textures/blocks/":"textures/items/")+alias;
-}
-
 async function openMain(player) {
   const money = balance(player);
   const form = new ActionFormData()
@@ -554,7 +518,7 @@ async function openBuyBasket(player, returnTo = openBuyShop) {
     .body(entries.length
       ? "§7Dein Warenkorb:\n" + entries.map((item, i) => "§f" + (i + 1) + ". " + item.qty + "× " + item.name + " – " + formatMoney(getPriceCents(item.id, "buy", item.basePrice) * item.qty)).join("\n") + "\n\n§7Gesamt: §6" + formatMoney(cartTotal(cart))
       : "§7Dein Warenkorb ist leer.");
-  for (const item of entries) form.button("§e" + item.name + "\n§7" + item.qty + " Stück – ändern / entfernen", itemIconPath(item.id));
+  for (const item of entries) form.button("§e" + item.name + "\n§7" + item.qty + " Stück – ändern / entfernen");
   form.button("§aJetzt kaufen");
   form.button("§cWarenkorb abbrechen/leeren");
   form.button("§7Weiter einkaufen");
@@ -667,7 +631,7 @@ async function showBuySearchResults(player, query, page) {
   const form = new ActionFormData().title("§l§bSUCHERGEBNISSE")
     .body("§7Suchbegriff: §f" + query + "\n§7Treffer: §f" + matches.length + " §8| §7Seite " + (page + 1) + "/" + Math.ceil(matches.length / pageSize) + "\n§7Warenkorb: §e" + getBuyCart(player).size + " Items – " + formatMoney(cartTotal(getBuyCart(player))));
   for (const item of shown) {
-    form.button(item.name + "\n§a" + formatMoney(getPriceCents(item.id, "buy", item.basePrice)) + " §8| §7" + item.category, itemIconPath(item.id));
+    form.button(item.name + "\n§a" + formatMoney(getPriceCents(item.id, "buy", item.basePrice)) + " §8| §7" + item.category);
   }
   if (start + pageSize < matches.length) form.button("§eWeitere Ergebnisse");
   form.button("§6🛒 Warenkorb öffnen");
@@ -710,7 +674,7 @@ async function openBuyItems(player, category, group) {
     .body("§7Wähle einen Gegenstand, um eine Menge hinzuzufügen.\n§7Warenkorb: §e" + cart.size + " Items – " + formatMoney(cartTotal(cart)));
   for (const [id, name, basePrice] of group.items) {
     const inCart = cart.get(id)?.qty ?? 0;
-    form.button(name + "\n§a" + formatMoney(getPriceCents(id, "buy", basePrice)) + " / Stück" + (inCart ? " §e| Im Korb: " + inCart : ""), itemIconPath(id));
+    form.button(name + "\n§a" + formatMoney(getPriceCents(id, "buy", basePrice)) + " / Stück" + (inCart ? " §e| Im Korb: " + inCart : ""));
   }
   form.button("§6🛒 Warenkorb öffnen");
   form.button("§7Zurück");
@@ -749,86 +713,56 @@ async function openSellSubcategories(player, category) {
 }
 
 async function openSellItems(player, category, group) {
-  const form = new ActionFormData().title("§l§c" + group.name.toUpperCase())
-    .body("§7Wähle einen Gegenstand zum Verkaufen. Die Vorschau zeigt das Item-Symbol.");
-  const owned = group.items.map(([id]) => countItem(player, id));
-  for (let i=0;i<group.items.length;i++) {
-    const [id,name,basePrice]=group.items[i];
-    form.button(name+"\n§c"+formatMoney(getPriceCents(id,"sell",basePrice))+" / Stück §8| §7Besitz: "+owned[i],itemIconPath(id));
+  const form = new ModalFormData().title("§l§c" + group.name.toUpperCase());
+  const ownedAmounts = group.items.map(([id]) => countItem(player, id));
+  for (let i = 0; i < group.items.length; i++) {
+    const [id, name, basePrice] = group.items[i];
+    form.textField(name + " – " + formatMoney(getPriceCents(id, "sell", basePrice)) + " / Stück (Besitz: " + ownedAmounts[i] + ")", "Anzahl", "0");
   }
-  form.button("§7Zurück");
-  const res=await form.show(player);
-  if(res.canceled||res.selection===group.items.length) return openSellSubcategories(player,category);
-  const entry=group.items[res.selection];
-  if(entry) return chooseSellQuantity(player,entry,category,group);
-  return openSellItems(player,category,group);
-}
-async function chooseSellQuantity(player,entry,category,group,returnTo=()=>openSellItems(player,category,group)) {
-  const [id,name,basePrice]=entry;
-  const owned=countItem(player,id);
-  if(owned<1){tell(player,"Du besitzt diesen Gegenstand nicht.");return returnTo();}
-  const modal=new ModalFormData().title("§l§c"+name)
-    .textField("Anzahl (Besitz: "+owned+") – "+formatMoney(getPriceCents(id,"sell",basePrice))+" / Stück","z. B. 1","1");
-  const res=await modal.show(player);
-  if(res.canceled)return returnTo();
-  const qty=Math.floor(Number(res.formValues?.[0]));
-  if(!Number.isInteger(qty)||qty<1||qty>owned){tell(player,"Ungültige Menge. Du besitzt "+owned+".");return chooseSellQuantity(player,entry,category,group,returnTo);}
-  if(!removeItems(player,id,qty)){tell(player,"Gegenstand konnte nicht entnommen werden.");return returnTo();}
-  const total=getPriceCents(id,"sell",basePrice)*qty;
-  setBalance(player.id,balance(player)+total);
-  tell(player,qty+"× "+name+" verkauft für "+formatMoney(total)+".");
-  return returnTo();
+  const res = await form.show(player);
+  if (res.canceled) return openSellSubcategories(player, category);
+  const requested = [];
+  for (let i = 0; i < group.items.length; i++) {
+    const [id, name, basePrice] = group.items[i];
+    const raw = String(res.formValues?.[i] ?? "0").trim();
+    const qty = raw === "" ? 0 : Number(raw);
+    if (!Number.isInteger(qty) || qty < 0 || qty > ownedAmounts[i]) {
+      tell(player, "Ungültige Verkaufsmenge für " + name + ". Du besitzt " + ownedAmounts[i] + ".");
+      return openSellItems(player, category, group);
+    }
+    if (qty > 0) requested.push({ id, name, qty, basePrice });
+  }
+  if (!requested.length) { tell(player, "Du hast keine Verkaufsmenge eingegeben."); return openSellItems(player, category, group); }
+  for (const item of requested) {
+    if (countItem(player, item.id) < item.qty) {
+      tell(player, "Nicht genügend " + item.name + " im Inventar.");
+      return openSellItems(player, category, group);
+    }
+  }
+  let total = 0;
+  for (const item of requested) {
+    if (!removeItems(player, item.id, item.qty)) {
+      tell(player, "Verkauf abgebrochen: " + item.name + " konnte nicht entnommen werden.");
+      return openSellItems(player, category, group);
+    }
+    total += getPriceCents(item.id, "sell", item.basePrice) * item.qty;
+  }
+  setBalance(player.id, balance(player) + total);
+  tell(player, "Verkauf abgeschlossen: " + requested.length + " verschiedene Gegenstände für " + formatMoney(total) + ".");
+  return openSellItems(player, category, group);
 }
 
-
-function adminSpecialItems() {
- const found=[];
- try {
-  for(const t of ItemTypes.getAll()) {
-   const id=t?.id;
-   if(typeof id!=="string"||!id.startsWith("minecraft:")) continue;
-   const raw=id.slice(10);
-   if(!(raw.endsWith("_spawn_egg")||raw==="mob_spawner")) continue;
-   try { new ItemStack(id,1); } catch { continue; }
-   const name=raw==="mob_spawner"?"Mob-Spawner":catalogLabel(id);
-   found.push([id,name,raw==="mob_spawner"?2500:100]);
-  }
- } catch {}
- if(!found.some(x=>x[0]==="minecraft:mob_spawner")) found.push(["minecraft:mob_spawner","Mob-Spawner",2500]);
- return found.sort((a,b)=>a[1].localeCompare(b[1],"de"));
-}
-async function openAdminSpecialItems(player, side) {
- const entries=adminSpecialItems();
- const title=side==="buy"?"ADMIN-SHOP: SPAWN-EIER":"ADMIN-VERKAUF: SPAWN-EIER";
- const form=new ActionFormData().title("§l§d"+title)
-  .body("§7Diese Gegenstände sind ausschließlich in der Admin-Verwaltung verfügbar.\n§7Wähle ein Item aus.");
- for(const [id,name,price] of entries) {
-  const cents=getPriceCents(id,side,price);
-  form.button(name+"\n§6"+formatMoney(cents)+" / Stück",itemIconPath(id));
- }
- form.button("§7Zurück");
- const res=await form.show(player);
- if(res.canceled||res.selection===entries.length) return openAdminMenu(player);
- const entry=entries[res.selection];
- if(!entry)return openAdminSpecialItems(player,side);
- if(side==="buy") return chooseBuyQuantity(player,entry,()=>openAdminSpecialItems(player,"buy"));
- return chooseSellQuantity(player,entry,{name:"Admin-Sonderartikel",groups:[]},{name:"Spawn-Eier und Spawner",items:entries},()=>openAdminSpecialItems(player,"sell"));
-}
 
 async function openAdminMenu(player) {
   const form = new ActionFormData().title("§l§cBAZAAR-ADMIN")
     .body("§7Preise werden dauerhaft in den Weltdaten gespeichert.")
     .button("§aKaufpreise bearbeiten\n§7Server-Shop")
     .button("§eVerkaufspreise bearbeiten\n§7Verkaufskatalog")
-    .button("§dAdmin-Shop: Spawn-Eier & Spawner kaufen")
-    .button("§cAdmin-Verkauf: Spawn-Eier & Spawner verkaufen")
     .button("§7Schließen");
   const res = await form.show(player);
-  if (res.canceled || res.selection === 4) return;
+  if (res.canceled || res.selection === 2) return;
   if (res.selection === 0) return openAdminBuyPrices(player);
   if (res.selection === 1) return openAdminSellCategories(player);
-  if (res.selection === 2) return openAdminSpecialItems(player, "buy");
-  if (res.selection === 3) return openAdminSpecialItems(player, "sell");
 }
 
 async function editPrice(player, itemId, itemName, side, currentCents, returnTo) {
@@ -907,7 +841,7 @@ async function openAdminSellGroups(player, category) {
 async function openAdminSellItems(player, category, group) {
   const form = new ActionFormData().title("§l§c" + group.name.toUpperCase())
     .body("§7Wähle den Gegenstand, dessen Verkaufspreis du ändern möchtest.");
-  for (const [id, name, basePrice] of group.items) form.button(name + "\n§c" + formatMoney(getPriceCents(id, "sell", basePrice)), itemIconPath(id));
+  for (const [id, name, basePrice] of group.items) form.button(name + "\n§c" + formatMoney(getPriceCents(id, "sell", basePrice)));
   form.button("§7Zurück");
   const res = await form.show(player);
   if (res.canceled || res.selection === group.items.length) return openAdminSellGroups(player, category);
@@ -921,7 +855,7 @@ async function openMarket(player) {
   const offers = listings().filter(x => x && x.id && x.sellerId !== player.id);
   const form = new ActionFormData().title("§l§bSPIELER-MARKTPLATZ")
     .body("§7Angebote anderer Spieler. Dein Guthaben: §6" + formatMoney(balance(player)));
-  for (const offer of offers.slice(0, 25)) form.button(offer.itemName + " ×" + offer.amount + "\n§6" + formatMoney(offer.price) + " §8| §7von " + offer.sellerName, itemIconPath(offer.itemId));
+  for (const offer of offers.slice(0, 25)) form.button(offer.itemName + " ×" + offer.amount + "\n§6" + formatMoney(offer.price) + " §8| §7von " + offer.sellerName);
   form.button("§aEigenes Item anbieten");
   form.button("Zurück");
   const res = await form.show(player);
@@ -1006,291 +940,26 @@ system.beforeEvents.startup.subscribe(({ customCommandRegistry }) => {
     }
   );
 
-  // Admin command: Minecraft also exposes the short chat alias /admin.
-  // Keep exactly one registration to avoid duplicate command conflicts.
   customCommandRegistry.registerCommand(
     {
       name: "survivalbazaar:admin",
       description: "Öffnet die geschützte Admin-Verwaltung des Survival Bazaar.",
-      // Permission is checked below against the actual player role. This avoids
-      // Bedrock's command parser rejecting valid Xbox operators before callback.
-      permissionLevel: CommandPermissionLevel.Any,
+      permissionLevel: CommandPermissionLevel.Admin,
       cheatsRequired: false
     },
     (origin) => {
-      const player = origin.initiator ?? origin.sourceEntity;
+      const player = origin.sourceEntity;
       if (!(player instanceof Player)) {
         return { status: CustomCommandStatus.Failure, message: "Dieser Befehl kann nur von Spielern verwendet werden." };
       }
-      try {
-        if (player.playerPermissionLevel < PlayerPermissionLevel.Operator) {
-          return { status: CustomCommandStatus.Failure, message: "Nur Operatoren dürfen /admin verwenden. Stelle deine Spielerberechtigung auf Operator." };
-        }
-      } catch (error) {
-        return { status: CustomCommandStatus.Failure, message: "Operator-Berechtigung konnte nicht geprüft werden." };
-      }
-      system.run(() => {
-        openAdminMenu(player).catch((error) => {
-          console.warn("[SurvivalBazaar] Admin-Menü konnte nicht geöffnet werden:", error);
-          tell(player, "Admin-Menü konnte nicht geöffnet werden. Bitte versuche es erneut.");
-        });
-      });
-      return { status: CustomCommandStatus.Success, message: "Admin-Verwaltung wird geöffnet." };
+      system.run(() => openAdminMenu(player).catch(() => tell(player, "Admin-Menü konnte nicht geöffnet werden.")));
+      return { status: CustomCommandStatus.Success };
     }
   );
 });
-
-
-const DISPLAY_FURNITURE = {
-  "survivalbazaar:modern_sofa": { entityId: "survivalbazaar:modern_sofa_display", seat: "sofa" },
-  "survivalbazaar:modern_chair": { entityId: "survivalbazaar:modern_chair_display", seat: "chair" },
-  "survivalbazaar:armchair": { entityId: "survivalbazaar:armchair_display", seat: "chair" },
-  "survivalbazaar:bar_stool": { entityId: "survivalbazaar:bar_stool_display", seat: "stool" },
-  "survivalbazaar:double_bed": { entityId: "survivalbazaar:double_bed_display", seat: "bed" },
-  "survivalbazaar:flat_tv": { entityId: "survivalbazaar:flat_tv_display" },
-  "survivalbazaar:fridge": { entityId: "survivalbazaar:fridge_display" }
-};
-const DISPLAY_FURNITURE_BY_ENTITY = Object.fromEntries(
-  Object.entries(DISPLAY_FURNITURE).map(([blockId, config]) => [config.entityId, { ...config, blockId }])
-);
-
-function furnitureAnchorTag(location) {
-  return "sb_anchor_" + location.x + "_" + location.y + "_" + location.z;
-}
-
-function spawnFurnitureDisplay(dimension, blockId, location, rotation = 0) {
-  const config = DISPLAY_FURNITURE[blockId];
-  if (!config) return undefined;
-  const tag = furnitureAnchorTag(location);
-  const nearby = dimension.getEntities({
-    type: config.entityId,
-    location: { x: location.x + 0.5, y: location.y + 0.5, z: location.z + 0.5 },
-    maxDistance: 4
-  });
-  const existing = nearby.find(entity => entity.hasTag(tag));
-  if (existing) return existing;
-  const entity = dimension.spawnEntity(config.entityId, {
-    x: location.x + 0.5,
-    y: location.y,
-    z: location.z + 0.5
-  });
-  entity.addTag(tag);
-  entity.setRotation({ x: 0, y: rotation });
-  return entity;
-}
-
-function repairFurnitureNearPlayer(player) {
-  try {
-    const dimension = player.dimension;
-    const center = player.location;
-    const existing = new Set();
-    for (const config of Object.values(DISPLAY_FURNITURE_BY_ENTITY)) {
-      for (const entity of dimension.getEntities({ type: config.entityId, location: center, maxDistance: 18 })) {
-        const tag = entity.getTags().find(value => value.startsWith("sb_anchor_"));
-        if (tag) existing.add(config.entityId + "|" + tag);
-      }
-    }
-    const cx = Math.floor(center.x), cy = Math.floor(center.y), cz = Math.floor(center.z);
-    for (let x = cx - 8; x <= cx + 8; x++) {
-      for (let y = cy - 3; y <= cy + 4; y++) {
-        for (let z = cz - 8; z <= cz + 8; z++) {
-          try {
-            const block = dimension.getBlock({ x, y, z });
-            const config = block && DISPLAY_FURNITURE[block.typeId];
-            if (!config) continue;
-            const tag = furnitureAnchorTag({ x, y, z });
-            const key = config.entityId + "|" + tag;
-            if (existing.has(key)) continue;
-            const entity = dimension.spawnEntity(config.entityId, { x: x + 0.5, y, z: z + 0.5 });
-            entity.addTag(tag);
-            existing.add(key);
-          } catch {}
-        }
-      }
-    }
-  } catch (error) {
-    console.warn("[SurvivalBazaar] Möbel-Reparatur übersprungen:", error);
-  }
-}
-
-world.afterEvents.playerPlaceBlock.subscribe(event => {
-  const blockId = event.block.typeId;
-  if (!DISPLAY_FURNITURE[blockId]) return;
-  const location = {
-    x: Math.floor(event.block.location.x),
-    y: Math.floor(event.block.location.y),
-    z: Math.floor(event.block.location.z)
-  };
-  const rotation = event.player.getRotation().y;
-  system.run(() => {
-    try {
-      if (event.dimension.getBlock(location)?.typeId !== blockId) return;
-      spawnFurnitureDisplay(event.dimension, blockId, location, rotation);
-    } catch (error) {
-      tell(event.player, "Das Möbelmodell konnte nicht geladen werden. Bitte platziere den Gegenstand erneut.");
-      console.warn("[SurvivalBazaar] Möbel konnte nicht gespawnt werden:", error);
-    }
-  });
-});
-
-world.afterEvents.playerBreakBlock.subscribe(event => {
-  const blockId = event.brokenBlockPermutation.type.id;
-  const config = DISPLAY_FURNITURE[blockId];
-  if (!config) return;
-  const location = {
-    x: Math.floor(event.block.location.x),
-    y: Math.floor(event.block.location.y),
-    z: Math.floor(event.block.location.z)
-  };
-  const tag = furnitureAnchorTag(location);
-  system.run(() => {
-    try {
-      const nearby = event.dimension.getEntities({
-        type: config.entityId,
-        location: { x: location.x + 0.5, y: location.y + 0.5, z: location.z + 0.5 },
-        maxDistance: 4
-      });
-      for (const entity of nearby) if (entity.hasTag(tag)) entity.remove();
-    } catch (error) {
-      console.warn("[SurvivalBazaar] Möbelmodell konnte nicht entfernt werden:", error);
-    }
-  });
-});
-
-
-
-const furnitureTvStates = new Map();
-
-function getFridgeContainer(entity) {
-  try {
-    return entity.getComponent("minecraft:inventory")?.container;
-  } catch {
-    return undefined;
-  }
-}
-
-function openFridgeTransfer(player, entity, direction) {
-  try {
-    const fridge = getFridgeContainer(entity);
-    const playerInventory = player.getComponent("minecraft:inventory")?.container;
-    if (!fridge || !playerInventory) {
-      tell(player, "Der Kühlschrank-Inhalt konnte nicht geöffnet werden.");
-      return;
-    }
-    const source = direction === "deposit" ? playerInventory : fridge;
-    const target = direction === "deposit" ? fridge : playerInventory;
-    const entries = [];
-    for (let slot = 0; slot < source.size; slot++) {
-      const stack = source.getItem(slot);
-      if (stack) entries.push({ slot, label: stack.amount + "x " + stack.typeId.replace("minecraft:", "").replace(/_/g, " ") });
-    }
-    if (!entries.length) {
-      tell(player, direction === "deposit" ? "Dein Inventar enthält keine Gegenstände zum Einlagern." : "Der Kühlschrank ist leer.");
-      return;
-    }
-    const form = new ModalFormData()
-      .title(direction === "deposit" ? "§l§aKÜHLSCHRANK – EINLAGERN" : "§l§eKÜHLSCHRANK – ENTNEHMEN")
-      .dropdown("Gegenstand auswählen", entries.map(entry => entry.label), 0);
-    form.show(player).then(result => {
-      if (result.canceled || !player.isValid || !entity.isValid) return;
-      const selected = entries[Number(result.formValues?.[0] ?? 0)];
-      if (!selected) return;
-      const current = source.getItem(selected.slot);
-      if (!current) return;
-      const moving = current.clone();
-      const leftover = target.addItem(moving);
-      if (leftover) {
-        source.setItem(selected.slot, leftover);
-        tell(player, "Es war nicht genug Platz vorhanden. Der Rest bleibt im Ausgangsinventar.");
-      } else {
-        source.setItem(selected.slot, undefined);
-        tell(player, direction === "deposit" ? "Gegenstand im Kühlschrank eingelagert." : "Gegenstand aus dem Kühlschrank entnommen.");
-      }
-      system.run(() => openFridgeMenu(player, entity));
-    }).catch(error => {
-      console.warn("[SurvivalBazaar] Kühlschrank-Menü fehlgeschlagen:", error);
-      tell(player, "Das Kühlschrank-Menü konnte nicht geöffnet werden.");
-    });
-  } catch (error) {
-    console.warn("[SurvivalBazaar] Kühlschrank-Transfer fehlgeschlagen:", error);
-    tell(player, "Der Kühlschrank konnte gerade nicht benutzt werden.");
-  }
-}
-
-function openFridgeMenu(player, entity) {
-  if (!player.isValid || !entity.isValid) return;
-  const form = new ActionFormData()
-    .title("§l§aKÜHLSCHRANK")
-    .body("§7Dein persönlicher Stauraum mit 27 Plätzen.")
-    .button("§aGegenstände einlagern")
-    .button("§eGegenstände entnehmen")
-    .button("§cSchließen");
-  form.show(player).then(result => {
-    if (result.canceled) return;
-    if (result.selection === 0) openFridgeTransfer(player, entity, "deposit");
-    else if (result.selection === 1) openFridgeTransfer(player, entity, "withdraw");
-  }).catch(error => {
-    console.warn("[SurvivalBazaar] Kühlschrank-Menü fehlgeschlagen:", error);
-    tell(player, "Das Kühlschrank-Menü konnte nicht geöffnet werden.");
-  });
-}
-
-world.afterEvents.playerInteractWithEntity.subscribe(event => {
-  const player = event.player;
-  const entity = event.target;
-  const config = DISPLAY_FURNITURE_BY_ENTITY[entity.typeId];
-  if (!config) return;
-  system.run(() => {
-    try {
-      if (!player.isValid || !entity.isValid) return;
-      if (config.seat) {
-        const rideable = entity.getComponent("minecraft:rideable");
-        const added = rideable?.addRider(player) ?? false;
-        if (!added) {
-          tell(player, "Der Sitzplatz ist gerade belegt oder konnte nicht benutzt werden.");
-          return;
-        }
-        if (config.seat === "bed") {
-          const tag = entity.getTags().find(value => value.startsWith("sb_anchor_"));
-          const match = tag?.match(/^sb_anchor_(-?\\d+)_(-?\\d+)_(-?\\d+)$/);
-          if (match) {
-            player.setSpawnPoint({
-              x: Number(match[1]) + 0.5,
-              y: Number(match[2]) + 0.5,
-              z: Number(match[3]) + 0.5,
-              dimension: player.dimension
-            });
-          }
-          tell(player, "Du liegst jetzt im Doppelbett. Dein persönlicher Spawnpunkt wurde gesetzt. Zum Aufstehen springst du.");
-        } else {
-          tell(player, "Du sitzt jetzt auf dem Möbelstück. Zum Aufstehen springst du.");
-        }
-        return;
-      }
-      if (entity.typeId === "survivalbazaar:fridge_display") {
-        openFridgeMenu(player, entity);
-        return;
-      }
-      if (entity.typeId === "survivalbazaar:flat_tv_display") {
-        const next = !furnitureTvStates.get(entity.id);
-        furnitureTvStates.set(entity.id, next);
-        player.onScreenDisplay.setActionBar(next ? "§eFernseher eingeschaltet." : "§7Fernseher ausgeschaltet.");
-        return;
-      }
-      tell(player, "Dieses Möbelstück wurde benutzt.");
-    } catch (error) {
-      console.warn("[SurvivalBazaar] Möbel-Interaktion fehlgeschlagen:", error);
-      tell(player, "Die Möbel-Interaktion ist fehlgeschlagen. Bitte versuche es erneut.");
-    }
-  });
-});
-
-
-
 world.afterEvents.playerSpawn.subscribe(ev => {
   if (ev.initialSpawn) {
     const p = ev.player;
-    system.runTimeout(() => repairFurnitureNearPlayer(p), 60);
     system.runTimeout(() => {
       const money = balance(p);
       tell(p, "Willkommen! Dein Startguthaben: " + formatMoney(money) + ". Befehle: /market oder /shop; Admins: /admin.");

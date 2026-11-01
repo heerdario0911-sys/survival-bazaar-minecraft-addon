@@ -1,74 +1,50 @@
 {
-  "survivalbazaar:armchair": {
-    "textures": "armchair",
-    "sound": "stone"
-  },
-  "survivalbazaar:bar_counter": {
-    "textures": "bar_counter",
-    "sound": "stone"
-  },
-  "survivalbazaar:bar_stool": {
-    "textures": "bar_stool",
-    "sound": "stone"
-  },
-  "survivalbazaar:bookshelf": {
-    "textures": "bookshelf",
-    "sound": "stone"
-  },
-  "survivalbazaar:coffee_table": {
-    "textures": "table",
-    "sound": "stone"
-  },
-  "survivalbazaar:dining_table": {
-    "textures": "dining_table",
-    "sound": "stone"
-  },
-  "survivalbazaar:double_bed": {
-    "textures": "bed",
+  "survivalbazaar:modern_sofa": {
+    "textures": "sofa",
     "sound": "stone"
   },
   "survivalbazaar:flat_tv": {
     "textures": "tv",
     "sound": "stone"
   },
-  "survivalbazaar:floor_lamp": {
-    "textures": "floor_lamp",
+  "survivalbazaar:wall_mirror": {
+    "textures": "mirror",
     "sound": "stone"
   },
-  "survivalbazaar:fridge": {
-    "textures": "fridge",
-    "sound": "stone"
-  },
-  "survivalbazaar:grandfather_clock": {
-    "textures": "grandfather_clock",
-    "sound": "stone"
-  },
-  "survivalbazaar:hanging_guitar": {
-    "textures": "hanging_guitar",
+  "survivalbazaar:coffee_table": {
+    "textures": "table",
     "sound": "stone"
   },
   "survivalbazaar:modern_chair": {
     "textures": "chair",
     "sound": "stone"
   },
-  "survivalbazaar:modern_sofa": {
-    "textures": "sofa",
+  "survivalbazaar:double_bed": {
+    "textures": "bed",
     "sound": "stone"
   },
-  "survivalbazaar:potted_plant": {
-    "textures": "potted_plant",
+  "survivalbazaar:fridge": {
+    "textures": "fridge",
     "sound": "stone"
   },
-  "survivalbazaar:wall_mirror": {
-    "textures": "mirror",
-    "sound": "stone"
-  },
-  "survivalbazaar:wall_shelf": {
-    "textures": "wall_shelf",
+  "survivalbazaar:dining_table": {
+    "textures": "table",
     "sound": "stone"
   },
   "survivalbazaar:wardrobe": {
-    "textures": "wardrobe",
+    "textures": "fridge",
+    "sound": "stone"
+  },
+  "survivalbazaar:bookshelf": {
+    "textures": "table",
+    "sound": "stone"
+  },
+  "survivalbazaar:floor_lamp": {
+    "textures": "tv",
+    "sound": "stone"
+  },
+  "survivalbazaar:armchair": {
+    "textures": "chair",
     "sound": "stone"
   }
 }
