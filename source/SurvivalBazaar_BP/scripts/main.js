@@ -662,9 +662,25 @@ async function reviewDirectTrade(player, trade) {
     tell(player, "Die Ware konnte nicht übertragen werden. Es wurde nichts berechnet.");
     return openDirectTradeInfo(player);
   }
-  setBalance(player.id, balance(player) - liveTrade.price);
-  setBalance(seller.id, balance(seller) + liveTrade.price);
-  saveDirectTrades(current.filter(t => t.id !== liveTrade.id));
+  const buyerBalanceBefore = balance(player);
+  const sellerBalanceBefore = balance(seller);
+  try {
+    setBalance(player.id, buyerBalanceBefore - liveTrade.price);
+    setBalance(seller.id, sellerBalanceBefore + liveTrade.price);
+    saveDirectTrades(current.filter(t => t.id !== liveTrade.id));
+  } catch (error) {
+    // Rollback: Ware und Kontostände werden wiederhergestellt, wenn das
+    // Speichern des abgeschlossenen Handels fehlschlägt.
+    removeItems(player, liveTrade.itemId, liveTrade.amount);
+    addItem(seller, liveTrade.itemId, liveTrade.amount);
+    try {
+      setBalance(player.id, buyerBalanceBefore);
+      setBalance(seller.id, sellerBalanceBefore);
+    } catch {}
+    tell(player, "Handel konnte nicht sicher gespeichert werden. Ware und Guthaben wurden zurückgesetzt.");
+    tell(seller, "Handel konnte nicht sicher gespeichert werden. Ware und Guthaben wurden zurückgesetzt.");
+    return openDirectTradeInfo(player);
+  }
   tell(player, "Handel abgeschlossen: " + liveTrade.amount + "× " + liveTrade.itemName + " erhalten für " + formatMoney(liveTrade.price) + ".");
   tell(seller, player.name + " hat dein Angebot angenommen. Du hast " + formatMoney(liveTrade.price) + " erhalten.");
   return openDirectTradeInfo(player);
