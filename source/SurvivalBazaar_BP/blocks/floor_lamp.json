@@ -5,6 +5,12 @@
       "identifier": "survivalbazaar:floor_lamp",
       "menu_category": {
         "category": "items"
+      },
+      "states": {
+        "survivalbazaar:is_on": [
+          false,
+          true
+        ]
       }
     },
     "components": {
@@ -13,15 +19,24 @@
       },
       "minecraft:material_instances": {
         "*": {
-          "texture": "tv",
+          "texture": "floor_lamp",
           "render_method": "opaque"
         }
       },
       "minecraft:destructible_by_mining": {
-        "seconds_to_destroy": 1.0
+        "seconds_to_destroy": 1
       },
       "minecraft:collision_box": true,
-      "minecraft:loot": "loot_tables/blocks/floor_lamp.json"
-    }
+      "minecraft:loot": "loot_tables/blocks/floor_lamp.json",
+      "minecraft:light_emission": 0
+    },
+    "permutations": [
+      {
+        "condition": "q.block_state('survivalbazaar:is_on') == true",
+        "components": {
+          "minecraft:light_emission": 15
+        }
+      }
+    ]
   }
 }

@@ -5,6 +5,12 @@
       "identifier": "survivalbazaar:flat_tv",
       "menu_category": {
         "category": "items"
+      },
+      "states": {
+        "survivalbazaar:is_on": [
+          false,
+          true
+        ]
       }
     },
     "components": {
@@ -18,10 +24,19 @@
         }
       },
       "minecraft:destructible_by_mining": {
-        "seconds_to_destroy": 1.0
+        "seconds_to_destroy": 1
       },
       "minecraft:collision_box": true,
-      "minecraft:loot": "loot_tables/blocks/flat_tv.json"
-    }
+      "minecraft:loot": "loot_tables/blocks/flat_tv.json",
+      "minecraft:light_emission": 0
+    },
+    "permutations": [
+      {
+        "condition": "q.block_state('survivalbazaar:is_on') == true",
+        "components": {
+          "minecraft:light_emission": 5
+        }
+      }
+    ]
   }
 }
