@@ -45,7 +45,7 @@ jobs:
               width, height, depth, color, comp, filt, interlace = struct.unpack(">IIBBBBB", data[16:29])
               channels = {0:1, 2:3, 3:1, 4:2, 6:4}[color]
               expected = height * (1 + width * channels * depth // 8)
-              repaired = raw.replace(slash + b"x00", b"\\x00")
+              repaired = raw.replace(slash + b"x00", bytes([0]))
               if len(raw) != expected and len(repaired) == expected:
                   raw = repaired
                   compressed = zlib.compress(raw, 9)
