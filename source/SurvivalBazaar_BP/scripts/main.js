@@ -449,6 +449,25 @@ function removeItems(player, typeId, amount) {
   }
   return left === 0;
 }
+
+const CUSTOM_ITEM_ICONS = {
+ "survivalbazaar:modern_sofa":"textures/blocks/sofa","survivalbazaar:flat_tv":"textures/blocks/tv",
+ "survivalbazaar:wall_mirror":"textures/blocks/mirror","survivalbazaar:coffee_table":"textures/blocks/table",
+ "survivalbazaar:modern_chair":"textures/blocks/chair","survivalbazaar:double_bed":"textures/blocks/bed",
+ "survivalbazaar:fridge":"textures/blocks/fridge","survivalbazaar:dining_table":"textures/blocks/table",
+ "survivalbazaar:wardrobe":"textures/blocks/fridge","survivalbazaar:bookshelf":"textures/blocks/table",
+ "survivalbazaar:floor_lamp":"textures/blocks/tv","survivalbazaar:armchair":"textures/blocks/chair",
+ "survivalbazaar:bar_counter":"textures/blocks/bar_counter","survivalbazaar:bar_stool":"textures/blocks/bar_stool",
+ "survivalbazaar:grandfather_clock":"textures/blocks/grandfather_clock","survivalbazaar:hanging_guitar":"textures/blocks/hanging_guitar",
+ "survivalbazaar:potted_plant":"textures/blocks/potted_plant","survivalbazaar:wall_shelf":"textures/blocks/wall_shelf"
+};
+function itemIconPath(id) {
+ if (CUSTOM_ITEM_ICONS[id]) return CUSTOM_ITEM_ICONS[id];
+ const raw=String(id).replace(/^minecraft:/,"");
+ const blockLike=/_block$|_log$|_wood$|_planks$|_ore$|_stone$|_bricks$|_wool$|_concrete$|_terracotta$|_glass$|_leaves$|_sapling$|_stairs$|_slab$|_fence$|_door$|_trapdoor$|_wall$|_bed$|_banner$|_carpet$|_candle$|_shulker_box$/.test(raw);
+ return (blockLike?"textures/blocks/":"textures/items/")+raw;
+}
+
 async function openMain(player) {
   const money = balance(player);
   const form = new ActionFormData()
@@ -631,7 +650,7 @@ async function showBuySearchResults(player, query, page) {
   const form = new ActionFormData().title("§l§bSUCHERGEBNISSE")
     .body("§7Suchbegriff: §f" + query + "\n§7Treffer: §f" + matches.length + " §8| §7Seite " + (page + 1) + "/" + Math.ceil(matches.length / pageSize) + "\n§7Warenkorb: §e" + getBuyCart(player).size + " Items – " + formatMoney(cartTotal(getBuyCart(player))));
   for (const item of shown) {
-    form.button(item.name + "\n§a" + formatMoney(getPriceCents(item.id, "buy", item.basePrice)) + " §8| §7" + item.category);
+    form.button(item.name + "\n§a" + formatMoney(getPriceCents(item.id, "buy", item.basePrice)) + " §8| §7" + item.category, itemIconPath(item.id));
   }
   if (start + pageSize < matches.length) form.button("§eWeitere Ergebnisse");
   form.button("§6🛒 Warenkorb öffnen");
@@ -674,7 +693,7 @@ async function openBuyItems(player, category, group) {
     .body("§7Wähle einen Gegenstand, um eine Menge hinzuzufügen.\n§7Warenkorb: §e" + cart.size + " Items – " + formatMoney(cartTotal(cart)));
   for (const [id, name, basePrice] of group.items) {
     const inCart = cart.get(id)?.qty ?? 0;
-    form.button(name + "\n§a" + formatMoney(getPriceCents(id, "buy", basePrice)) + " / Stück" + (inCart ? " §e| Im Korb: " + inCart : ""));
+    form.button(name + "\n§a" + formatMoney(getPriceCents(id, "buy", basePrice)) + " / Stück" + (inCart ? " §e| Im Korb: " + inCart : ""), itemIconPath(id));
   }
   form.button("§6🛒 Warenkorb öffnen");
   form.button("§7Zurück");
@@ -713,45 +732,36 @@ async function openSellSubcategories(player, category) {
 }
 
 async function openSellItems(player, category, group) {
-  const form = new ModalFormData().title("§l§c" + group.name.toUpperCase());
-  const ownedAmounts = group.items.map(([id]) => countItem(player, id));
-  for (let i = 0; i < group.items.length; i++) {
-    const [id, name, basePrice] = group.items[i];
-    form.textField(name + " – " + formatMoney(getPriceCents(id, "sell", basePrice)) + " / Stück (Besitz: " + ownedAmounts[i] + ")", "Anzahl", "0");
+  const form = new ActionFormData().title("§l§c" + group.name.toUpperCase())
+    .body("§7Wähle einen Gegenstand zum Verkaufen. Die Vorschau zeigt das Item-Symbol.");
+  const owned = group.items.map(([id]) => countItem(player, id));
+  for (let i=0;i<group.items.length;i++) {
+    const [id,name,basePrice]=group.items[i];
+    form.button(name+"\n§c"+formatMoney(getPriceCents(id,"sell",basePrice))+" / Stück §8| §7Besitz: "+owned[i],itemIconPath(id));
   }
-  const res = await form.show(player);
-  if (res.canceled) return openSellSubcategories(player, category);
-  const requested = [];
-  for (let i = 0; i < group.items.length; i++) {
-    const [id, name, basePrice] = group.items[i];
-    const raw = String(res.formValues?.[i] ?? "0").trim();
-    const qty = raw === "" ? 0 : Number(raw);
-    if (!Number.isInteger(qty) || qty < 0 || qty > ownedAmounts[i]) {
-      tell(player, "Ungültige Verkaufsmenge für " + name + ". Du besitzt " + ownedAmounts[i] + ".");
-      return openSellItems(player, category, group);
-    }
-    if (qty > 0) requested.push({ id, name, qty, basePrice });
-  }
-  if (!requested.length) { tell(player, "Du hast keine Verkaufsmenge eingegeben."); return openSellItems(player, category, group); }
-  for (const item of requested) {
-    if (countItem(player, item.id) < item.qty) {
-      tell(player, "Nicht genügend " + item.name + " im Inventar.");
-      return openSellItems(player, category, group);
-    }
-  }
-  let total = 0;
-  for (const item of requested) {
-    if (!removeItems(player, item.id, item.qty)) {
-      tell(player, "Verkauf abgebrochen: " + item.name + " konnte nicht entnommen werden.");
-      return openSellItems(player, category, group);
-    }
-    total += getPriceCents(item.id, "sell", item.basePrice) * item.qty;
-  }
-  setBalance(player.id, balance(player) + total);
-  tell(player, "Verkauf abgeschlossen: " + requested.length + " verschiedene Gegenstände für " + formatMoney(total) + ".");
-  return openSellItems(player, category, group);
+  form.button("§7Zurück");
+  const res=await form.show(player);
+  if(res.canceled||res.selection===group.items.length) return openSellSubcategories(player,category);
+  const entry=group.items[res.selection];
+  if(entry) return chooseSellQuantity(player,entry,category,group);
+  return openSellItems(player,category,group);
 }
-
+async function chooseSellQuantity(player,entry,category,group) {
+  const [id,name,basePrice]=entry;
+  const owned=countItem(player,id);
+  if(owned<1){tell(player,"Du besitzt diesen Gegenstand nicht.");return openSellItems(player,category,group);}
+  const modal=new ModalFormData().title("§l§c"+name)
+    .textField("Anzahl (Besitz: "+owned+") – "+formatMoney(getPriceCents(id,"sell",basePrice))+" / Stück","z. B. 1","1");
+  const res=await modal.show(player);
+  if(res.canceled)return openSellItems(player,category,group);
+  const qty=Math.floor(Number(res.formValues?.[0]));
+  if(!Number.isInteger(qty)||qty<1||qty>owned){tell(player,"Ungültige Menge. Du besitzt "+owned+".");return chooseSellQuantity(player,entry,category,group);}
+  if(!removeItems(player,id,qty)){tell(player,"Gegenstand konnte nicht entnommen werden.");return openSellItems(player,category,group);}
+  const total=getPriceCents(id,"sell",basePrice)*qty;
+  setBalance(player.id,balance(player)+total);
+  tell(player,qty+"× "+name+" verkauft für "+formatMoney(total)+".");
+  return openSellItems(player,category,group);
+}
 
 async function openAdminMenu(player) {
   const form = new ActionFormData().title("§l§cBAZAAR-ADMIN")
@@ -855,7 +865,7 @@ async function openMarket(player) {
   const offers = listings().filter(x => x && x.id && x.sellerId !== player.id);
   const form = new ActionFormData().title("§l§bSPIELER-MARKTPLATZ")
     .body("§7Angebote anderer Spieler. Dein Guthaben: §6" + formatMoney(balance(player)));
-  for (const offer of offers.slice(0, 25)) form.button(offer.itemName + " ×" + offer.amount + "\n§6" + formatMoney(offer.price) + " §8| §7von " + offer.sellerName);
+  for (const offer of offers.slice(0, 25)) form.button(offer.itemName + " ×" + offer.amount + "\n§6" + formatMoney(offer.price) + " §8| §7von " + offer.sellerName, itemIconPath(offer.itemId));
   form.button("§aEigenes Item anbieten");
   form.button("Zurück");
   const res = await form.show(player);
@@ -962,7 +972,7 @@ world.afterEvents.playerSpawn.subscribe(ev => {
     const p = ev.player;
     system.runTimeout(() => {
       const money = balance(p);
-      tell(p, "Willkommen! Dein Startguthaben: " + formatMoney(money) + ". Befehle: /market oder /shop; Admins: /admin.");
+      tell(p, "Willkommen! Dein Startguthaben: " + formatMoney(money) + ". Befehle: /market oder /shop; Admins: /survivalbazaar:admin.");
     }, 40);
   }
 });
