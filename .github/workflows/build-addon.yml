@@ -55,6 +55,19 @@ jobs:
               texture = comp["minecraft:material_instances"]["*"]["texture"]
               assert geo in models, f"Fehlendes Modell: {path} -> {geo}"
               assert texture in atlas["texture_data"], f"Fehlende Texturzuordnung: {path} -> {texture}"
+
+          # Jede Block-ID braucht auch einen Resource-Pack-Eintrag mit gültiger Textur.
+          block_atlas = json.loads((rp / "blocks.json").read_text())
+          block_ids = set()
+          for path in (bp / "blocks").glob("*.json"):
+              block = json.loads(path.read_text())["minecraft:block"]
+              identifier = block["description"]["identifier"]
+              block_ids.add(identifier)
+              assert identifier in block_atlas, f"Fehlender blocks.json-Eintrag: {identifier}"
+              texture = block_atlas[identifier].get("textures")
+              textures = texture if isinstance(texture, list) else [texture]
+              for name in textures:
+                  assert isinstance(name, str) and name in atlas["texture_data"], f"Ungültige Blocktextur: {identifier} -> {name}"
           for path in (rp / "textures").rglob("*.png"):
               data = path.read_bytes()
               assert data.startswith(bytes([137,80,78,71,13,10,26,10])), f"Ungültige PNG: {path}"
