@@ -1,8 +1,8 @@
 import { world, system, ItemStack, ItemTypes, CommandPermissionLevel, CustomCommandStatus, Player } from "@minecraft/server";
 import { ActionFormData, ModalFormData, MessageFormData } from "@minecraft/server-ui";
 
-// Alle Textfelder laufen zentral über diese 2-Argumente-Variante.
-// Damit kann kein alter String-Defaultwert versehentlich als Optionsobjekt landen.
+// Alle Textfelder laufen zentral über eine explizite leere Standard-Eingabe.
+// So wird die optionale defaultValue-Position der Bedrock-UI-API eindeutig belegt.
 function addBazaarTextField(form, label, placeholder) {
   if (!form || typeof form.textField !== "function") throw new TypeError("ModalFormData.textField ist nicht verfügbar.");
   return form.textField(String(label), String(placeholder), "");
