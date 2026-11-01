@@ -17,6 +17,36 @@ jobs:
       - uses: actions/checkout@v4
       - name: JavaScript-Syntax prüfen
         run: node --check source/SurvivalBazaar_BP/scripts/main.js
+      - name: JSON-, Modell- und Texturzuordnungen prüfen
+        run: |
+          python3 - <<'PY'
+          import json, pathlib, struct
+          root = pathlib.Path("source")
+          bp = root / "SurvivalBazaar_BP"
+          rp = root / "SurvivalBazaar_RP"
+          for path in root.rglob("*.json"):
+              json.loads(path.read_text(encoding="utf-8"))
+          atlas = json.loads((rp / "textures/terrain_texture.json").read_text())
+          models = {}
+          for path in (rp / "models/blocks").glob("*.geo.json"):
+              data = json.loads(path.read_text())
+              for geo in data.get("minecraft:geometry", []):
+                  models[geo.get("description", {}).get("identifier")] = path
+          for path in (bp / "blocks").glob("*.json"):
+              data = json.loads(path.read_text())
+              block = data["minecraft:block"]
+              comp = block["components"]
+              geo = comp["minecraft:geometry"]["identifier"]
+              texture = comp["minecraft:material_instances"]["*"]["texture"]
+              assert geo in models, f"Fehlendes Modell: {path} -> {geo}"
+              assert texture in atlas["texture_data"], f"Fehlende Texturzuordnung: {path} -> {texture}"
+          for path in (rp / "textures").rglob("*.png"):
+              data = path.read_bytes()
+              assert data.startswith(b"\\x89PNG\\r\\n\\x1a\\n"), f"Ungültige PNG: {path}"
+              w, h = struct.unpack(">II", data[16:24])
+              assert w > 1 and h > 1 and len(data) > 200, f"Platzhalter-/leere Textur: {path}"
+          print("JSON, 3D-Modelle, Texturzuordnungen und PNG-Dateien geprüft.")
+          PY
       - name: Behavior- und Resource-Pack paketieren
         run: |
           set -e
