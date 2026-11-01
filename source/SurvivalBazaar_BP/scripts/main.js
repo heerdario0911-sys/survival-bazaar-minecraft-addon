@@ -973,3 +973,37 @@ world.afterEvents.worldLoad.subscribe(() => {
   if (typeof world.getDynamicProperty(LISTINGS_KEY) !== "string") writeJson(LISTINGS_KEY, []);
   if (typeof world.getDynamicProperty(PRICES_KEY) !== "string") writeJson(PRICES_KEY, {});
 });
+
+
+// Möbelblöcke werden beim Platzieren in ihre Display-Entitäten umgewandelt.
+// Dadurch können Sitzmöbel und Betten die vorhandenen Rideable-Komponenten nutzen,
+// statt nur dekorative, nicht benutzbare Blöcke zu bleiben.
+const FURNITURE_DISPLAY_ENTITIES = {
+  "survivalbazaar:modern_sofa": "survivalbazaar:modern_sofa_display",
+  "survivalbazaar:double_bed": "survivalbazaar:double_bed_display",
+  "survivalbazaar:flat_tv": "survivalbazaar:flat_tv_display",
+  "survivalbazaar:fridge": "survivalbazaar:fridge_display",
+  "survivalbazaar:modern_chair": "survivalbazaar:modern_chair_display",
+  "survivalbazaar:bar_stool": "survivalbazaar:bar_stool_display",
+  "survivalbazaar:armchair": "survivalbazaar:armchair_display"
+};
+
+world.afterEvents.playerPlaceBlock.subscribe((event) => {
+  const block = event.block;
+  const displayId = FURNITURE_DISPLAY_ENTITIES[block.typeId];
+  if (!displayId) return;
+
+  const location = block.location;
+  try {
+    block.dimension.spawnEntity(displayId, {
+      x: location.x + 0.5,
+      y: location.y,
+      z: location.z + 0.5
+    });
+    // Der Block dient nur als platzierbarer Möbel-Gegenstand.
+    // Die sichtbare und interaktive Möbel-Instanz übernimmt danach die Entität.
+    block.setType("minecraft:air");
+  } catch (error) {
+    tell(event.player, "Möbel konnte nicht aufgestellt werden: " + (error?.message ?? String(error)));
+  }
+});
