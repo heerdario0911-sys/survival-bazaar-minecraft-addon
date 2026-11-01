@@ -99,6 +99,14 @@ jobs:
               textures = texture if isinstance(texture, list) else [texture]
               for name in textures:
                   assert isinstance(name, str) and name in atlas["texture_data"], f"Ungültige Blocktextur: {identifier} -> {name}"
+              # Die Laufzeit-Blocktextur muss zur vorgesehenen Möbeltextur passen.
+              # Barhocker sind absichtlich unsichtbare Anker; ihre Item-Textur
+              # wird separat über minecraft:item_visual gesetzt.
+              if identifier == "survivalbazaar:bar_stool":
+                  assert block["components"]["minecraft:material_instances"]["*"]["texture"] == "furniture_anchor", "Barhocker-Ankertextur wurde verändert"
+              else:
+                  runtime_texture = block["components"]["minecraft:material_instances"]["*"]["texture"]
+                  assert runtime_texture == texture, f"Falsche Laufzeit-Textur: {identifier} -> {runtime_texture}, erwartet {texture}"
           for path in (rp / "textures").rglob("*.png"):
               data = path.read_bytes()
               assert data.startswith(bytes([137,80,78,71,13,10,26,10])), f"Ungültige PNG: {path}"
