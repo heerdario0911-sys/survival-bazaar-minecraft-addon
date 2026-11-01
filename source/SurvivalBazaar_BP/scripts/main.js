@@ -1053,7 +1053,6 @@ const DISPLAY_FURNITURE = {
 const DISPLAY_FURNITURE_BY_ENTITY = Object.fromEntries(
   Object.entries(DISPLAY_FURNITURE).map(([blockId, config]) => [config.entityId, { ...config, blockId }])
 );
-const activeFurniturePassengers = new Set();
 
 function furnitureAnchorTag(location) {
   return "sb_anchor_" + location.x + "_" + location.y + "_" + location.z;
@@ -1158,57 +1157,35 @@ world.afterEvents.playerBreakBlock.subscribe(event => {
   });
 });
 
+
 world.afterEvents.playerInteractWithEntity.subscribe(event => {
-  const player = event.player;
-  const entity = event.target;
-  const config = DISPLAY_FURNITURE_BY_ENTITY[entity.typeId];
-  if (!config?.seat) return;
-  const tag = entity.getTags().find(value => value.startsWith("sb_anchor_"));
+  const config = DISPLAY_FURNITURE_BY_ENTITY[event.target.typeId];
+  if (config?.seat !== "bed") return;
+  const tag = event.target.getTags().find(value => value.startsWith("sb_anchor_"));
   const match = tag?.match(/^sb_anchor_(-?\\d+)_(-?\\d+)_(-?\\d+)$/);
   if (!match) return;
   const blockPosition = { x: Number(match[1]), y: Number(match[2]), z: Number(match[3]) };
   system.run(() => {
     try {
-      if (!player.isValid) return;
-      if (activeFurniturePassengers.has(player.id)) {
-        player.stopPassengerOfBlock();
-        activeFurniturePassengers.delete(player.id);
-        tell(player, "Du bist aufgestanden.");
-        return;
-      }
-      const isBed = config.seat === "bed";
-      const seatY = isBed ? 0.65 : (config.seat === "stool" ? 0.58 : 0.43);
-      player.startPassengerOfBlock(
-        blockPosition,
-        { x: 0.5, y: seatY, z: 0.5 },
-        player.getRotation().y,
-        180,
-        isBed ? "Laying" : "Riding"
-      );
-      activeFurniturePassengers.add(player.id);
-      if (isBed) {
-        player.setSpawnPoint({
-          x: blockPosition.x + 0.5,
-          y: blockPosition.y + 0.5,
-          z: blockPosition.z + 0.5,
-          dimension: player.dimension
-        });
-        tell(player, "Du liegst im Doppelbett. Dein persönlicher Spawnpunkt wurde gesetzt.");
-      } else {
-        tell(player, "Du sitzt jetzt auf dem Möbelstück.");
-      }
+      if (!event.player.isValid) return;
+      event.player.setSpawnPoint({
+        x: blockPosition.x + 0.5,
+        y: blockPosition.y + 0.5,
+        z: blockPosition.z + 0.5,
+        dimension: event.player.dimension
+      });
+      tell(event.player, "Dein persönlicher Spawnpunkt wurde am Doppelbett gesetzt.");
     } catch (error) {
-      activeFurniturePassengers.delete(player.id);
-      tell(player, "Die Sitz-/Liegefunktion konnte nicht gestartet werden. Bitte versuche es erneut.");
-      console.warn("[SurvivalBazaar] Möbel-Interaktion fehlgeschlagen:", error);
+      tell(event.player, "Der Spawnpunkt konnte nicht gesetzt werden. Bitte versuche es erneut.");
+      console.warn("[SurvivalBazaar] Bett-Interaktion fehlgeschlagen:", error);
     }
   });
 });
 
+
 world.afterEvents.playerSpawn.subscribe(ev => {
   if (ev.initialSpawn) {
     const p = ev.player;
-    activeFurniturePassengers.delete(p.id);
     system.runTimeout(() => repairFurnitureNearPlayer(p), 60);
     system.runTimeout(() => {
       const money = balance(p);

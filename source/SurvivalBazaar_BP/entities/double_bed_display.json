@@ -33,12 +33,20 @@
         ]
       },
       "minecraft:fire_immune": {},
-      "minecraft:interact": {
-        "interactions": [
+      "minecraft:rideable": {
+        "seat_count": 1,
+        "family_types": [
+          "player"
+        ],
+        "interact_text": "action.interact.mount",
+        "seats": [
           {
-            "interact_text": "action.interact.mount",
-            "use_item": false,
-            "swing": false
+            "position": [
+              0,
+              0.38,
+              0
+            ],
+            "lock_rider_rotation": 0
           }
         ]
       }
