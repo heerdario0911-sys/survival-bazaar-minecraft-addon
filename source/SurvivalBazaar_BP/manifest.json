@@ -2,12 +2,12 @@
   "format_version": 2,
   "header": {
     "name": "Survival Bazaar - Behavior",
-    "description": "Shop, Spieler-Marktplatz und moderne M\u00f6bel",
+    "description": "Shop, Spieler-Marktplatz und moderne Möbel",
     "uuid": "a1b2c3d4-e5f6-47a8-9b0c-1d2e3f4a5b6c",
     "version": [
       1,
       4,
-      0
+      1
     ],
     "min_engine_version": [
       1,
@@ -22,7 +22,7 @@
       "version": [
         1,
         4,
-        0
+        1
       ]
     },
     {
@@ -32,7 +32,7 @@
       "version": [
         1,
         4,
-        0
+        1
       ],
       "entry": "scripts/main.js"
     }
