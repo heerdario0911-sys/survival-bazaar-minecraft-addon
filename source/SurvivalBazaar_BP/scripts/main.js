@@ -324,6 +324,9 @@ function buildCompleteCatalog() {
   if (technical.test(raw)) continue;
   // Nur Einträge, die Bedrock als echtes Inventar-Item anlegen kann.
   try { new ItemStack(id, 1); } catch { continue; }
+  const rawItemId = id.replace(/^minecraft:/, "");
+  // Spawn-Eier und Mobspawner sind ausschließlich über /admin verfügbar.
+  if (rawItemId.endsWith("_spawn_egg") || rawItemId === "mob_spawner" || rawItemId === "spawner") continue;
   const category = catalogCategory(id);
   if (category === "Technische Gegenstände") continue;
   if (!grouped.has(category)) grouped.set(category, []);
@@ -1067,14 +1070,61 @@ async function openSellItems(player, category, group) {
 }
 async function openAdminMenu(player) {
   const form = new ActionFormData().title("§l§cBAZAAR-ADMIN")
-    .body("§7Preise werden dauerhaft in den Weltdaten gespeichert.")
+    .body("§7Spawn-Eier und Mobspawner sind nur hier verfügbar. Preise werden dauerhaft gespeichert.")
+    .button("§aAdmin: Kaufen\n§7Spawn-Eier und Mobspawner")
+    .button("§cAdmin: Verkaufen\n§7Spawn-Eier und Mobspawner")
     .button("§aKaufpreise bearbeiten\n§7Server-Shop")
     .button("§eVerkaufspreise bearbeiten\n§7Verkaufskatalog")
     .button("§7Schließen");
   const res = await form.show(player);
-  if (res.canceled || res.selection === 2) return;
-  if (res.selection === 0) return openAdminBuyPrices(player);
-  if (res.selection === 1) return openAdminSellCategories(player);
+  if (res.canceled || res.selection === 4) return;
+  if (res.selection === 0) return openAdminSpecialItems(player, "buy");
+  if (res.selection === 1) return openAdminSpecialItems(player, "sell");
+  if (res.selection === 2) return openAdminBuyPrices(player);
+  if (res.selection === 3) return openAdminSellCategories(player);
+}
+
+function getAdminSpecialItems() {
+  const result = [];
+  let all = [];
+  try { all = ItemTypes.getAll(); } catch {}
+  const seen = new Set();
+  for (const type of all) {
+    const id = type?.id;
+    if (typeof id !== "string" || !id.startsWith("minecraft:")) continue;
+    const raw = id.slice("minecraft:".length);
+    if (!raw.endsWith("_spawn_egg") && raw !== "mob_spawner" && raw !== "spawner") continue;
+    if (seen.has(id)) continue;
+    try { new ItemStack(id, 1); } catch { continue; }
+    seen.add(id);
+    const name = raw === "mob_spawner" || raw === "spawner" ? "Mobspawner" : catalogLabel(id);
+    const basePrice = raw === "mob_spawner" || raw === "spawner" ? 5000 : 250;
+    result.push([id, name, basePrice]);
+  }
+  return result.sort((a,b) => a[1].localeCompare(b[1], "de"));
+}
+
+async function openAdminSpecialItems(player, side) {
+  const items = getAdminSpecialItems();
+  if (!items.length) {
+    tell(player, "Spawn-Eier oder Mobspawner wurden von dieser Bedrock-Version nicht als verfügbare Items gemeldet.");
+    return openAdminMenu(player);
+  }
+  const title = side === "buy" ? "§l§aADMIN-KAUF" : "§l§cADMIN-VERKAUF";
+  const form = new ActionFormData().title(title)
+    .body("§7Nur über die Admin-Verwaltung verfügbar. §8(" + items.length + " Artikel)");
+  for (const [id, name, basePrice] of items) {
+    const price = getPriceCents(id, side, basePrice);
+    const suffix = side === "buy" ? "" : " §8| §7Besitz: " + countItem(player, id);
+    form.button(name + "\n" + (side === "buy" ? "§a" : "§c") + formatMoney(price) + " / Stück" + suffix, itemIconPath(id));
+  }
+  form.button("§7Zurück");
+  const res = await form.show(player);
+  if (res.canceled || res.selection === items.length) return openAdminMenu(player);
+  const [id, name, basePrice] = items[res.selection] ?? [];
+  if (!id) return openAdminSpecialItems(player, side);
+  if (side === "buy") return chooseBuyQuantity(player, [id, name, basePrice], () => openAdminSpecialItems(player, side));
+  return sellCatalogEntry(player, { id, name, basePrice }, () => openAdminSpecialItems(player, side));
 }
 
 async function editPrice(player, itemId, itemName, side, currentCents, returnTo) {
