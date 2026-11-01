@@ -1,6 +1,6 @@
 {
   "survivalbazaar:armchair": {
-    "textures": "chair",
+    "textures": "armchair",
     "sound": "stone"
   },
   "survivalbazaar:bar_counter": {
@@ -12,7 +12,7 @@
     "sound": "stone"
   },
   "survivalbazaar:bookshelf": {
-    "textures": "table",
+    "textures": "bookshelf",
     "sound": "stone"
   },
   "survivalbazaar:coffee_table": {
@@ -20,7 +20,7 @@
     "sound": "stone"
   },
   "survivalbazaar:dining_table": {
-    "textures": "table",
+    "textures": "dining_table",
     "sound": "stone"
   },
   "survivalbazaar:double_bed": {
@@ -32,7 +32,7 @@
     "sound": "stone"
   },
   "survivalbazaar:floor_lamp": {
-    "textures": "tv",
+    "textures": "floor_lamp",
     "sound": "stone"
   },
   "survivalbazaar:fridge": {
@@ -68,7 +68,7 @@
     "sound": "stone"
   },
   "survivalbazaar:wardrobe": {
-    "textures": "fridge",
+    "textures": "wardrobe",
     "sound": "stone"
   }
 }

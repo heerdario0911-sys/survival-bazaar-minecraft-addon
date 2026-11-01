@@ -42,6 +42,21 @@
     },
     "wall_shelf": {
       "textures": "textures/blocks/wall_shelf"
+    },
+    "bookshelf": {
+      "textures": "textures/blocks/bookshelf"
+    },
+    "dining_table": {
+      "textures": "textures/blocks/dining_table"
+    },
+    "floor_lamp": {
+      "textures": "textures/blocks/floor_lamp"
+    },
+    "wardrobe": {
+      "textures": "textures/blocks/wardrobe"
+    },
+    "armchair": {
+      "textures": "textures/blocks/armchair"
     }
   }
 }
