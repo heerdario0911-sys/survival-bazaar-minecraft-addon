@@ -13,7 +13,7 @@
       },
       "minecraft:material_instances": {
         "*": {
-          "texture": "chair",
+          "texture": "armchair",
           "render_method": "opaque"
         }
       },
