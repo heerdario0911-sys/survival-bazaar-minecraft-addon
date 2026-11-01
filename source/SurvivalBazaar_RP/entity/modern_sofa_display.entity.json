@@ -7,7 +7,7 @@
         "default": "entity_alphatest"
       },
       "textures": {
-        "default": "textures/blocks/sofa"
+        "default": "textures/blocks/furniture_anchor"
       },
       "geometry": {
         "default": "geometry.survivalbazaar.display_modern_sofa"
