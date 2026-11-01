@@ -47,9 +47,20 @@ const BLOCK_ITEM_IDS = new Set((
 function itemIconPath(itemId) {
   if (CUSTOM_ITEM_ICONS[itemId]) return CUSTOM_ITEM_ICONS[itemId];
   const path = String(itemId).replace(/^minecraft:/, "");
-  const colored = /^(white|orange|magenta|light_blue|yellow|lime|pink|gray|light_gray|cyan|purple|blue|brown|green|red|black)_/.test(path);
-  const woodPart = /^(oak|spruce|birch|jungle|acacia|dark_oak|mangrove|cherry|bamboo|crimson|warped)_/.test(path);
-  return "textures/" + (BLOCK_ITEM_IDS.has(path) || colored || woodPart ? "blocks/" : "items/") + path;
+  // Vanilla-Icons werden nicht mehr über vermutete Dateinamen geladen:
+  // Bedrock nutzt je nach Gegenstand abweichende Atlasnamen. Diese sicheren
+  // Bazaar-Kategorie-Icons verhindern fehlende/lila-schwarze Vorschauen.
+  if (/(sword|bow|crossbow|trident|mace|arrow|shield|helmet|chestplate|leggings|boots|armor)/.test(path))
+    return "textures/ui/icons/combat.png";
+  if (/(beef|porkchop|chicken|mutton|rabbit|cod|salmon|fish|apple|carrot|potato|beetroot|melon|pumpkin|berries|bread|cookie|cake|pie|stew|kelp|honey|chorus_fruit)/.test(path))
+    return "textures/ui/icons/food.png";
+  if (/(seed|sapling|propagule|flower|mushroom|fungus|roots|vines|wheat|sugar_cane|cocoa|wart|kelp|bamboo|cactus|plant)/.test(path))
+    return "textures/ui/icons/plants.png";
+  if (/(log|wood|plank|stone|dirt|sand|gravel|brick|glass|wool|concrete|terracotta|ore|block|slab|stairs|fence|door|trapdoor|wall|torch|lantern)/.test(path))
+    return "textures/ui/icons/blocks.png";
+  if (/(ingot|nugget|raw_|diamond|emerald|quartz|coal|charcoal|scrap|shard|pearl|star|totem|shell|echo|bone|string|leather|feather|gunpowder|redstone|lapis)/.test(path))
+    return "textures/ui/icons/materials.png";
+  return "textures/ui/icons/misc.png";
 }
 
 const SHOP = [
