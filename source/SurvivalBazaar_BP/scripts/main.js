@@ -924,33 +924,92 @@ async function openAdminSellItems(player, category, group) {
 }
 
 async function openMarket(player) {
-  const offers = listings().filter(x => x && x.id && x.sellerId !== player.id);
+  const allOffers = listings().filter(x => x && x.id);
+  const offers = allOffers.filter(x => x.sellerId !== player.id);
+  const ownCount = allOffers.filter(x => x.sellerId === player.id).length;
   const form = new ActionFormData().title("§l§bSPIELER-MARKTPLATZ")
     .body("§7Angebote anderer Spieler. Dein Guthaben: §6" + formatMoney(balance(player)));
-  for (const offer of offers.slice(0, 25)) form.button(offer.itemName + " ×" + offer.amount + "\n§6" + formatMoney(offer.price) + " §8| §7von " + offer.sellerName, itemIconPath(offer.itemId));
+  for (const offer of offers.slice(0, 23)) {
+    const hasDiscount = Number(offer.discountThreshold) > 0 && Number(offer.discountPercent) > 0;
+    const discountLine = hasDiscount ? "\n§a" + offer.discountPercent + "% Rabatt ab " + offer.discountThreshold + " Stück" : "";
+    form.button(offer.itemName + " ×" + offer.amount + "\n§6" + formatMoney(offer.price) + " §8| §7von " + offer.sellerName + discountLine, itemIconPath(offer.itemId));
+  }
   form.button("§aEigenes Item anbieten");
-  form.button("Zurück");
+  form.button("§eMeine Angebote (" + ownCount + ")");
+  form.button("§7Zurück");
   const res = await form.show(player);
   if (res.canceled) return;
-  if (res.selection === offers.slice(0,25).length) return createListing(player);
-  if (res.selection === offers.slice(0,25).length + 1) return openMain(player);
-  const offer = offers[res.selection];
-  if (!offer) return openMarket(player);
-  const confirm = new MessageFormData().title("Angebot kaufen").body(offer.amount + "× " + offer.itemName + " von " + offer.sellerName + " für " + formatMoney(offer.price) + " kaufen?")
-    .button1("Kaufen").button2("Abbrechen");
+  if (res.selection < Math.min(offers.length, 23)) {
+    const offer = offers[res.selection];
+    if (!offer) return openMarket(player);
+    const discountApplies = Number(offer.discountThreshold) > 0 &&
+      Number(offer.discountPercent) > 0 && offer.amount >= offer.discountThreshold;
+    const discountPercent = discountApplies ? Math.min(90, Math.max(0, Number(offer.discountPercent))) : 0;
+    const finalPrice = Math.max(1, Math.round(offer.price * (100 - discountPercent) / 100));
+    const discountText = discountPercent ? "\n§aMengenrabatt: " + discountPercent + "% (du sparst " + formatMoney(offer.price - finalPrice) + ")" : "";
+    const confirm = new MessageFormData().title("Angebot kaufen")
+      .body(offer.amount + "× " + offer.itemName + " von " + offer.sellerName + " für " + formatMoney(finalPrice) + " kaufen?" + discountText)
+      .button1("Kaufen").button2("Abbrechen");
+    const c = await confirm.show(player);
+    if (c.canceled || c.selection !== 0) return openMarket(player);
+    const current = listings();
+    const idx = current.findIndex(x => x.id === offer.id);
+    if (idx < 0) { tell(player, "Dieses Angebot ist nicht mehr verfügbar."); return openMarket(player); }
+    if (balance(player) < finalPrice) { tell(player, "Du hast nicht genug Guthaben."); return openMarket(player); }
+    if (!addItem(player, offer.itemId, offer.amount)) { tell(player, "Dein Inventar ist voll."); return openMarket(player); }
+    setBalance(player.id, balance(player) - finalPrice);
+    setBalance(offer.sellerId, (accounts()[offer.sellerId] ?? 0) + finalPrice);
+    current.splice(idx, 1);
+    writeJson(LISTINGS_KEY, current);
+    tell(player, "Angebot gekauft. " + formatMoney(finalPrice) + " wurden überwiesen.");
+    return openMarket(player);
+  }
+  if (res.selection === Math.min(offers.length, 23)) return createListing(player);
+  if (res.selection === Math.min(offers.length, 23) + 1) return openMyListings(player);
+  return openMain(player);
+}
+async function openMyListings(player) {
+  const own = listings().filter(x => x && x.id && x.sellerId === player.id);
+  const form = new ActionFormData().title("§l§eMEINE ANGEBOTE")
+    .body(own.length ? "§7Wähle ein Angebot aus, das du zurücknehmen möchtest. Die Ware wird dir zurückgegeben." : "§7Du hast momentan keine aktiven Angebote.");
+  for (const offer of own.slice(0, 25)) {
+    const hasDiscount = Number(offer.discountThreshold) > 0 && Number(offer.discountPercent) > 0;
+    const discountLine = hasDiscount ? "\n§a" + offer.discountPercent + "% Rabatt ab " + offer.discountThreshold + " Stück" : "";
+    form.button(offer.itemName + " ×" + offer.amount + "\n§6" + formatMoney(offer.price) + discountLine, itemIconPath(offer.itemId));
+  }
+  form.button("§7Zurück");
+  const res = await form.show(player);
+  if (res.canceled || res.selection === own.slice(0, 25).length) return openMarket(player);
+  const offer = own[res.selection];
+  if (!offer) return openMyListings(player);
+  const confirm = new MessageFormData().title("Angebot zurücknehmen")
+    .body(offer.amount + "× " + offer.itemName + " zurücknehmen und ins Inventar legen?")
+    .button1("Zurücknehmen").button2("Abbrechen");
   const c = await confirm.show(player);
-  if (c.canceled || c.selection !== 0) return openMarket(player);
+  if (c.canceled || c.selection !== 0) return openMyListings(player);
   const current = listings();
-  const idx = current.findIndex(x => x.id === offer.id);
-  if (idx < 0) { tell(player, "Dieses Angebot ist nicht mehr verfügbar."); return openMarket(player); }
-  if (balance(player) < offer.price) { tell(player, "Du hast nicht genug Guthaben."); return openMarket(player); }
-  if (!addItem(player, offer.itemId, offer.amount)) { tell(player, "Dein Inventar ist voll."); return openMarket(player); }
-  setBalance(player.id, balance(player) - offer.price);
-  setBalance(offer.sellerId, (accounts()[offer.sellerId] ?? 0) + offer.price);
+  const idx = current.findIndex(x => x.id === offer.id && x.sellerId === player.id);
+  if (idx < 0) { tell(player, "Dieses Angebot ist nicht mehr verfügbar."); return openMyListings(player); }
+  if (!canFitItem(player, offer.itemId, offer.amount)) {
+    tell(player, "Dein Inventar hat nicht genug Platz. Räume zuerst etwas frei.");
+    return openMyListings(player);
+  }
   current.splice(idx, 1);
-  writeJson(LISTINGS_KEY, current);
-  tell(player, "Angebot gekauft. " + formatMoney(offer.price) + " wurden überwiesen.");
-  return openMarket(player);
+  try {
+    writeJson(LISTINGS_KEY, current);
+    if (!addItem(player, offer.itemId, offer.amount)) {
+      const restored = listings();
+      restored.push(offer);
+      writeJson(LISTINGS_KEY, restored);
+      tell(player, "Die Ware konnte nicht zurückgegeben werden. Das Angebot wurde wiederhergestellt.");
+      return openMyListings(player);
+    }
+  } catch {
+    tell(player, "Das Angebot konnte nicht zurückgenommen werden.");
+    return openMyListings(player);
+  }
+  tell(player, "Angebot zurückgenommen. " + offer.amount + "× " + offer.itemName + " sind wieder in deinem Inventar.");
+  return openMyListings(player);
 }
 async function createListing(player) {
   const inv = player.getComponent("minecraft:inventory")?.container;
@@ -960,17 +1019,26 @@ async function createListing(player) {
   const itemName = held.nameTag || itemId.replace("minecraft:", "").replaceAll("_", " ");
   const modal = new ModalFormData().title("Item anbieten")
     .textField("Anzahl (max. 64)", "z. B. 1", { defaultValue: String(held.amount) })
-    .textField("Gesamtpreis in Euro (€)", "z. B. 12,50 €", { defaultValue: "10,00 €" });
+    .textField("Gesamtpreis in Euro (€)", "z. B. 12,50 €", { defaultValue: "10,00 €" })
+    .textField("Mengenrabatt ab Stück (0 = kein Rabatt)", "z. B. 16", { defaultValue: "0" })
+    .textField("Rabatt in Prozent (0–90)", "z. B. 10", { defaultValue: "0" });
   const res = await modal.show(player);
   if (res.canceled) return openMarket(player);
   const amount = Math.floor(Number(res.formValues?.[0]));
   const price = parseMoneyToCents(res.formValues?.[1]);
-  if (!Number.isInteger(amount) || amount < 1 || amount > held.amount || amount > 64 || !Number.isInteger(price) || price < 1) {
-    tell(player, "Ungültige Anzahl oder Preis."); return openMarket(player);
+  const discountThreshold = Math.floor(Number(res.formValues?.[2]));
+  const discountPercent = Math.floor(Number(res.formValues?.[3]));
+  if (!Number.isInteger(amount) || amount < 1 || amount > held.amount || amount > 64 ||
+      !Number.isInteger(price) || price < 1 ||
+      !Number.isInteger(discountThreshold) || discountThreshold < 0 || discountThreshold > amount ||
+      !Number.isInteger(discountPercent) || discountPercent < 0 || discountPercent > 90 ||
+      ((discountThreshold === 0) !== (discountPercent === 0))) {
+    tell(player, "Ungültige Anzahl, Preis oder Rabatt. Für keinen Rabatt beide Rabattfelder auf 0 setzen.");
+    return openMarket(player);
   }
   if (!removeItems(player, itemId, amount)) { tell(player, "Item konnte nicht entnommen werden."); return openMarket(player); }
   const all = listings();
-  all.push({ id: String(Date.now()) + "-" + player.id, sellerId: player.id, sellerName: player.name, itemId, itemName, amount, price });
+  all.push({ id: String(Date.now()) + "-" + player.id, sellerId: player.id, sellerName: player.name, itemId, itemName, amount, price, discountThreshold, discountPercent });
   try { writeJson(LISTINGS_KEY, all); tell(player, "Dein Angebot wurde eingestellt."); }
   catch { addItem(player, itemId, amount); tell(player, "Marktplatz voll – Item zurückgegeben."); }
   return openMarket(player);
