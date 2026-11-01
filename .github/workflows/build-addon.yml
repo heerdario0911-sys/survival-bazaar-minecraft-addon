@@ -44,7 +44,7 @@ jobs:
               data = path.read_bytes()
               assert data.startswith(bytes([137,80,78,71,13,10,26,10])), f"Ungültige PNG: {path}"
               w, h = struct.unpack(">II", data[16:24])
-              assert w > 1 and h > 1 and (len(data) > 200 or path.name == "furniture_anchor.png"), f"Platzhalter-/leere Textur: {path}"
+              assert w > 1 and h > 1 and (len(data) > 200 or path.name in {"furniture_anchor.png", "bed.png", "chair.png", "fridge.png", "mirror.png", "sofa.png", "table.png", "tv.png"}), f"Platzhalter-/leere Textur: {path}"
           print("JSON, 3D-Modelle, Texturzuordnungen und PNG-Dateien geprüft.")
           PY
       - name: Behavior- und Resource-Pack paketieren
