@@ -21,7 +21,8 @@ jobs:
         run: |
           python3 - <<'PY'
           import pathlib
-          prefix = b"\\\\x89PNG\\\\r\\\\n\\\\x1a\\\\n"
+          slash = bytes([92])
+          prefix = slash + b"x89PNG" + slash + b"r" + slash + b"n" + slash + b"x1a" + slash + b"n"
           png_header = bytes([137, 80, 78, 71, 13, 10, 26, 10])
           fixed = []
           for path in pathlib.Path("source/SurvivalBazaar_RP/textures").rglob("*.png"):
