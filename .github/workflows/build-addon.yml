@@ -23,8 +23,8 @@ jobs:
           test -f source/SurvivalBazaar_BP/manifest.json
           test -f source/SurvivalBazaar_RP/manifest.json
           mkdir -p dist
-          (cd source && zip -qr ../dist/SurvivalBazaar_BP.mcpack SurvivalBazaar_BP)
-          (cd source && zip -qr ../dist/SurvivalBazaar_RP.mcpack SurvivalBazaar_RP)
+          (cd source/SurvivalBazaar_BP && zip -qr ../../dist/SurvivalBazaar_BP.mcpack .)
+          (cd source/SurvivalBazaar_RP && zip -qr ../../dist/SurvivalBazaar_RP.mcpack .)
           cd dist
           zip -q SurvivalBazaar.mcaddon SurvivalBazaar_BP.mcpack SurvivalBazaar_RP.mcpack
           unzip -t SurvivalBazaar.mcaddon
