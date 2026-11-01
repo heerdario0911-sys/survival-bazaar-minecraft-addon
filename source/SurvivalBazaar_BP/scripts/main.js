@@ -980,10 +980,10 @@ function writeFurnitureData(block, data) {
   if (raw.length > 30000) throw new Error("Der Möbelspeicher ist voll.");
   world.setDynamicProperty(furnitureKey(block), raw);
 }
-async function openFridge(player, block) {
+async function openFridge(player, block, title = "KÜHLSCHRANK") {
   const data = readFurnitureData(block);
   const entries = Object.entries(data.items ?? {}).filter(([id, qty]) => typeof qty === "number" && qty > 0);
-  const form = new ActionFormData().title("§l§bKÜHLSCHRANK")
+  const form = new ActionFormData().title("§l§b" + title)
     .body("§7Dein persönlicher Möbelspeicher.\n§fGelagerte Stapel: §b" + entries.length);
   form.button("§aGegenstand einlagern");
   form.button("§eGegenstand entnehmen");
@@ -1076,7 +1076,10 @@ async function mountFurniture(player, block, entityId) {
 async function interactWithFurniture(player, block) {
   const id = block.typeId;
   const data = readFurnitureData(block);
-  if (id === "survivalbazaar:fridge") return openFridge(player, block);
+  if (id === "survivalbazaar:fridge") return openFridge(player, block, "KÜHLSCHRANK");
+  if (id === "survivalbazaar:wardrobe") return openFridge(player, block, "KLEIDERSCHRANK");
+  if (id === "survivalbazaar:bookshelf") return openFridge(player, block, "BÜCHERREGAL");
+  if (id === "survivalbazaar:wall_shelf") return openFridge(player, block, "WANDREGAL");
   const seats = {
     "survivalbazaar:modern_sofa": "survivalbazaar:modern_sofa_display",
     "survivalbazaar:modern_chair": "survivalbazaar:modern_chair_display",
