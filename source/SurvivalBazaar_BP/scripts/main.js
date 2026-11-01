@@ -767,7 +767,7 @@ async function openAdminMenu(player) {
 
 async function editPrice(player, itemId, itemName, side, currentCents, returnTo) {
   const modal = new ModalFormData().title("Preis bearbeiten")
-    .textField(itemName + " – " + (side === "buy" ? "Kaufpreis" : "Verkaufspreis") + " in Euro (€)", "z. B. 12,50 €");
+    .textField(itemName + " – " + (side === "buy" ? "Kaufpreis" : "Verkaufspreis") + " in Euro (€)", "Aktuell: " + formatMoney(currentCents) + " – neuen Preis eingeben");
   const res = await modal.show(player);
   if (res.canceled) return returnTo();
   const cents = parseMoneyToCents(res.formValues?.[0]);
