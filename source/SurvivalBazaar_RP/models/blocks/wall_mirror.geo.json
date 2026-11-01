@@ -6,7 +6,7 @@
         "identifier": "geometry.survivalbazaar.wall_mirror",
         "texture_width": 16,
         "texture_height": 16,
-        "visible_bounds_width": 2,
+        "visible_bounds_width": 1.5,
         "visible_bounds_height": 2,
         "visible_bounds_offset": [
           0,
@@ -18,16 +18,16 @@
         {
           "name": "root",
           "pivot": [
-            8,
             0,
-            8
+            0,
+            0
           ],
           "cubes": [
             {
               "origin": [
-                3,
+                -5,
                 1,
-                7
+                -1
               ],
               "size": [
                 10,
@@ -41,9 +41,9 @@
             },
             {
               "origin": [
-                4,
+                -4,
                 2,
-                6
+                -2
               ],
               "size": [
                 8,

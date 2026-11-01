@@ -46,5 +46,29 @@
   "survivalbazaar:armchair": {
     "textures": "chair",
     "sound": "stone"
+  },
+  "survivalbazaar:grandfather_clock": {
+    "textures": "grandfather_clock",
+    "sound": "wood"
+  },
+  "survivalbazaar:hanging_guitar": {
+    "textures": "hanging_guitar",
+    "sound": "wood"
+  },
+  "survivalbazaar:bar_counter": {
+    "textures": "bar_counter",
+    "sound": "wood"
+  },
+  "survivalbazaar:bar_stool": {
+    "textures": "bar_stool",
+    "sound": "wood"
+  },
+  "survivalbazaar:wall_shelf": {
+    "textures": "wall_shelf",
+    "sound": "wood"
+  },
+  "survivalbazaar:potted_plant": {
+    "textures": "potted_plant",
+    "sound": "wood"
   }
 }

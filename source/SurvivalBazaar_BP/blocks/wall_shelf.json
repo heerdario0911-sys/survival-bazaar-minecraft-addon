@@ -1,0 +1,36 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:block": {
+    "description": {
+      "identifier": "survivalbazaar:wall_shelf",
+      "menu_category": {
+        "category": "items"
+      }
+    },
+    "components": {
+      "minecraft:geometry": {
+        "identifier": "geometry.survivalbazaar.wall_shelf"
+      },
+      "minecraft:material_instances": {
+        "*": {
+          "texture": "wall_shelf",
+          "render_method": "opaque"
+        }
+      },
+      "minecraft:destructible_by_mining": {
+        "seconds_to_destroy": 1
+      },
+      "minecraft:collision_box": false,
+      "minecraft:loot": "loot_tables/blocks/wall_shelf.json",
+      "minecraft:placement_filter": {
+        "conditions": [
+          {
+            "allowed_faces": [
+              "side"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

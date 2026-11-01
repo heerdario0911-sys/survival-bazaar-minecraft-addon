@@ -17,6 +17,12 @@ const PRICES_KEY = "bazaar:prices";
 // Texturpfade für Item-Schaltflächen im Kauf-, Verkaufs- und Spielermarkt.
 const CUSTOM_ITEM_ICONS = {
   "survivalbazaar:modern_sofa": "textures/blocks/sofa",
+  "survivalbazaar:grandfather_clock": "textures/blocks/grandfather_clock",
+  "survivalbazaar:hanging_guitar": "textures/blocks/hanging_guitar",
+  "survivalbazaar:bar_counter": "textures/blocks/bar_counter",
+  "survivalbazaar:bar_stool": "textures/blocks/bar_stool",
+  "survivalbazaar:wall_shelf": "textures/blocks/wall_shelf",
+  "survivalbazaar:potted_plant": "textures/blocks/potted_plant",
   "survivalbazaar:flat_tv": "textures/blocks/tv",
   "survivalbazaar:wall_mirror": "textures/blocks/mirror",
   "survivalbazaar:coffee_table": "textures/blocks/table",
@@ -50,19 +56,25 @@ const SHOP = [
   { id: "minecraft:arrow", name: "Pfeil", buy: 3, sell: 1 },
   { id: "minecraft:ender_pearl", name: "Enderperle", buy: 45, sell: 15 },
   // Moderne, eigens modellierte Möbel aus dem Survival Bazaar Resource Pack
-  { id: "survivalbazaar:modern_sofa", name: "Modernes Sofa", buy: 25, sell: 9 },
-  { id: "survivalbazaar:flat_tv", name: "Flachbildfernseher", buy: 33, sell: 12 },
+  { id: "survivalbazaar:modern_sofa", name: "Sofa", buy: 25, sell: 9 },
+  { id: "survivalbazaar:flat_tv", name: "Fernseher", buy: 33, sell: 12 },
   { id: "survivalbazaar:wall_mirror", name: "Wandspiegel", buy: 13, sell: 5 },
   { id: "survivalbazaar:coffee_table", name: "Couchtisch", buy: 10, sell: 3 },
-  { id: "survivalbazaar:modern_chair", name: "Moderner Sessel", buy: 15, sell: 5 },
+  { id: "survivalbazaar:modern_chair", name: "Stuhl", buy: 15, sell: 5 },
   { id: "survivalbazaar:double_bed", name: "Doppelbett", buy: 28, sell: 10 },
   { id: "survivalbazaar:fridge", name: "Kühlschrank", buy: 30, sell: 10 }
 ,
   { id: "survivalbazaar:dining_table", name: "Esstisch", buy: 32, sell: 12 }
   ,{ id: "survivalbazaar:wardrobe", name: "Kleiderschrank", buy: 48, sell: 18 }
-  ,{ id: "survivalbazaar:bookshelf", name: "Modernes Bücherregal", buy: 28, sell: 10 }
+  ,{ id: "survivalbazaar:bookshelf", name: "Bücherregal", buy: 28, sell: 10 }
   ,{ id: "survivalbazaar:floor_lamp", name: "Stehlampe", buy: 20, sell: 7 }
-  ,{ id: "survivalbazaar:armchair", name: "Polstersessel", buy: 24, sell: 9 }
+  ,{ id: "survivalbazaar:armchair", name: "Sessel", buy: 24, sell: 9 }
+  ,{ id: "survivalbazaar:grandfather_clock", name: "Standuhr", buy: 38, sell: 14 }
+  ,{ id: "survivalbazaar:hanging_guitar", name: "Wandgitarre", buy: 29, sell: 10 }
+  ,{ id: "survivalbazaar:bar_counter", name: "Bartresen", buy: 42, sell: 16 }
+  ,{ id: "survivalbazaar:bar_stool", name: "Barhocker", buy: 18, sell: 6 }
+  ,{ id: "survivalbazaar:wall_shelf", name: "Wandregal", buy: 16, sell: 6 }
+  ,{ id: "survivalbazaar:potted_plant", name: "Topfpflanze", buy: 9, sell: 3 }
 ];
 
 // Verkaufs-Katalog: mehrstufige Kategorien, jedes Item einzeln verkaufbar.

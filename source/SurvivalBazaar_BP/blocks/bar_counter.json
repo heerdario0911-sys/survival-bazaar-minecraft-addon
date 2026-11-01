@@ -1,0 +1,27 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:block": {
+    "description": {
+      "identifier": "survivalbazaar:bar_counter",
+      "menu_category": {
+        "category": "items"
+      }
+    },
+    "components": {
+      "minecraft:geometry": {
+        "identifier": "geometry.survivalbazaar.bar_counter"
+      },
+      "minecraft:material_instances": {
+        "*": {
+          "texture": "bar_counter",
+          "render_method": "opaque"
+        }
+      },
+      "minecraft:destructible_by_mining": {
+        "seconds_to_destroy": 1
+      },
+      "minecraft:collision_box": true,
+      "minecraft:loot": "loot_tables/blocks/bar_counter.json"
+    }
+  }
+}

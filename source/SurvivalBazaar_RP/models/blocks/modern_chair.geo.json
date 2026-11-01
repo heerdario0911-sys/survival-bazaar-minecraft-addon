@@ -6,7 +6,7 @@
         "identifier": "geometry.survivalbazaar.modern_chair",
         "texture_width": 16,
         "texture_height": 16,
-        "visible_bounds_width": 2,
+        "visible_bounds_width": 1.5,
         "visible_bounds_height": 2,
         "visible_bounds_offset": [
           0,
@@ -18,16 +18,16 @@
         {
           "name": "root",
           "pivot": [
-            8,
             0,
-            8
+            0,
+            0
           ],
           "cubes": [
             {
               "origin": [
-                2,
+                -6,
                 5,
-                3
+                -5
               ],
               "size": [
                 12,
@@ -41,9 +41,9 @@
             },
             {
               "origin": [
-                2,
+                -6,
                 8,
-                10
+                2
               ],
               "size": [
                 12,
@@ -57,7 +57,39 @@
             },
             {
               "origin": [
+                -6,
+                0,
+                -5
+              ],
+              "size": [
                 2,
+                5,
+                2
+              ],
+              "uv": [
+                0,
+                0
+              ]
+            },
+            {
+              "origin": [
+                4,
+                0,
+                -5
+              ],
+              "size": [
+                2,
+                5,
+                2
+              ],
+              "uv": [
+                0,
+                0
+              ]
+            },
+            {
+              "origin": [
+                -6,
                 0,
                 3
               ],
@@ -73,41 +105,9 @@
             },
             {
               "origin": [
-                12,
+                4,
                 0,
                 3
-              ],
-              "size": [
-                2,
-                5,
-                2
-              ],
-              "uv": [
-                0,
-                0
-              ]
-            },
-            {
-              "origin": [
-                2,
-                0,
-                11
-              ],
-              "size": [
-                2,
-                5,
-                2
-              ],
-              "uv": [
-                0,
-                0
-              ]
-            },
-            {
-              "origin": [
-                12,
-                0,
-                11
               ],
               "size": [
                 2,

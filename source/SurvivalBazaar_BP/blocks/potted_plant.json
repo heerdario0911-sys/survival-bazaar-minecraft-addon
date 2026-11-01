@@ -1,0 +1,27 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:block": {
+    "description": {
+      "identifier": "survivalbazaar:potted_plant",
+      "menu_category": {
+        "category": "items"
+      }
+    },
+    "components": {
+      "minecraft:geometry": {
+        "identifier": "geometry.survivalbazaar.potted_plant"
+      },
+      "minecraft:material_instances": {
+        "*": {
+          "texture": "potted_plant",
+          "render_method": "opaque"
+        }
+      },
+      "minecraft:destructible_by_mining": {
+        "seconds_to_destroy": 1
+      },
+      "minecraft:collision_box": true,
+      "minecraft:loot": "loot_tables/blocks/potted_plant.json"
+    }
+  }
+}

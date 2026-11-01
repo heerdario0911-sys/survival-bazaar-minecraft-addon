@@ -4,12 +4,44 @@
   "padding": 8,
   "num_mip_levels": 4,
   "texture_data": {
-    "sofa": {"textures": "textures/blocks/sofa"},
-    "tv": {"textures": "textures/blocks/tv"},
-    "mirror": {"textures": "textures/blocks/mirror"},
-    "table": {"textures": "textures/blocks/table"},
-    "chair": {"textures": "textures/blocks/chair"},
-    "bed": {"textures": "textures/blocks/bed"},
-    "fridge": {"textures": "textures/blocks/fridge"}
+    "sofa": {
+      "textures": "textures/blocks/sofa"
+    },
+    "tv": {
+      "textures": "textures/blocks/tv"
+    },
+    "mirror": {
+      "textures": "textures/blocks/mirror"
+    },
+    "table": {
+      "textures": "textures/blocks/table"
+    },
+    "chair": {
+      "textures": "textures/blocks/chair"
+    },
+    "bed": {
+      "textures": "textures/blocks/bed"
+    },
+    "fridge": {
+      "textures": "textures/blocks/fridge"
+    },
+    "grandfather_clock": {
+      "textures": "textures/blocks/grandfather_clock"
+    },
+    "hanging_guitar": {
+      "textures": "textures/blocks/hanging_guitar"
+    },
+    "bar_counter": {
+      "textures": "textures/blocks/bar_counter"
+    },
+    "bar_stool": {
+      "textures": "textures/blocks/bar_stool"
+    },
+    "wall_shelf": {
+      "textures": "textures/blocks/wall_shelf"
+    },
+    "potted_plant": {
+      "textures": "textures/blocks/potted_plant"
+    }
   }
 }

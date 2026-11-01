@@ -6,7 +6,7 @@
         "identifier": "geometry.survivalbazaar.flat_tv",
         "texture_width": 16,
         "texture_height": 16,
-        "visible_bounds_width": 2,
+        "visible_bounds_width": 1.5,
         "visible_bounds_height": 2,
         "visible_bounds_offset": [
           0,
@@ -18,16 +18,16 @@
         {
           "name": "root",
           "pivot": [
-            8,
             0,
-            8
+            0,
+            0
           ],
           "cubes": [
             {
               "origin": [
+                -7,
                 1,
-                1,
-                7
+                -1
               ],
               "size": [
                 14,
@@ -41,9 +41,9 @@
             },
             {
               "origin": [
+                -6,
                 2,
-                2,
-                6
+                -2
               ],
               "size": [
                 12,
@@ -57,9 +57,9 @@
             },
             {
               "origin": [
-                6,
+                -2,
                 0,
-                7
+                -1
               ],
               "size": [
                 4,
