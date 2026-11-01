@@ -766,18 +766,32 @@ async function openAdminMenu(player) {
 }
 
 async function editPrice(player, itemId, itemName, side, currentCents, returnTo) {
-  const modal = new ModalFormData().title("Preis bearbeiten")
-    .textField(itemName + " – " + (side === "buy" ? "Kaufpreis" : "Verkaufspreis") + " in Euro (€)", "z. B. 12,50 €", formatMoney(currentCents));
-  const res = await modal.show(player);
-  if (res.canceled) return returnTo();
-  const cents = parseMoneyToCents(res.formValues?.[0]);
-  if (!Number.isInteger(cents) || cents < 0 || cents > 100000000) {
-    tell(player, "Ungültiger Preis. Bitte z. B. 12,50 eingeben (0 bis 1.000.000 €).");
-    return editPrice(player, itemId, itemName, side, currentCents, returnTo);
+  try {
+    while (true) {
+      const modal = new ModalFormData().title("Preis bearbeiten")
+        .textField(
+          itemName + " – " + (side === "buy" ? "Kaufpreis" : "Verkaufspreis") + " in Euro (€)",
+          "z. B. 12,50",
+          formatMoney(currentCents)
+        );
+      const res = await modal.show(player);
+      if (res.canceled) return await returnTo();
+
+      const rawValue = res.formValues?.[0];
+      const cents = parseMoneyToCents(rawValue);
+      if (!Number.isSafeInteger(cents) || cents < 0 || cents > 100000000) {
+        tell(player, "Ungültiger Preis. Bitte z. B. 12,50 eingeben (0 bis 1.000.000 €).");
+        continue;
+      }
+
+      setPriceCents(itemId, side, cents);
+      tell(player, (side === "buy" ? "Kaufpreis" : "Verkaufspreis") + " für " + itemName + " auf " + formatMoney(cents) + " gesetzt.");
+      return await returnTo();
+    }
+  } catch (error) {
+    tell(player, "Preis konnte nicht gespeichert werden: " + (error?.message ?? String(error)));
+    try { return await returnTo(); } catch {}
   }
-  setPriceCents(itemId, side, cents);
-  tell(player, (side === "buy" ? "Kaufpreis" : "Verkaufspreis") + " für " + itemName + " auf " + formatMoney(cents) + " gesetzt.");
-  return returnTo();
 }
 
 async function openAdminBuyPrices(player) {
