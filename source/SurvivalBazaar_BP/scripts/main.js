@@ -1040,52 +1040,176 @@ system.beforeEvents.startup.subscribe(({ customCommandRegistry }) => {
   );
 });
 
-const SEAT_BLOCKS = new Set([
- "survivalbazaar:modern_sofa","survivalbazaar:modern_chair","survivalbazaar:armchair","survivalbazaar:bar_stool"
-]);
-const BED_BLOCKS = new Set(["survivalbazaar:double_bed"]);
+
+const DISPLAY_FURNITURE = {
+  "survivalbazaar:modern_sofa": { entityId: "survivalbazaar:modern_sofa_display", seat: "sofa" },
+  "survivalbazaar:modern_chair": { entityId: "survivalbazaar:modern_chair_display", seat: "chair" },
+  "survivalbazaar:armchair": { entityId: "survivalbazaar:armchair_display", seat: "chair" },
+  "survivalbazaar:bar_stool": { entityId: "survivalbazaar:bar_stool_display", seat: "stool" },
+  "survivalbazaar:double_bed": { entityId: "survivalbazaar:double_bed_display", seat: "bed" },
+  "survivalbazaar:flat_tv": { entityId: "survivalbazaar:flat_tv_display" },
+  "survivalbazaar:fridge": { entityId: "survivalbazaar:fridge_display" }
+};
+const DISPLAY_FURNITURE_BY_ENTITY = Object.fromEntries(
+  Object.entries(DISPLAY_FURNITURE).map(([blockId, config]) => [config.entityId, { ...config, blockId }])
+);
 const activeFurniturePassengers = new Set();
 
-world.afterEvents.playerInteractWithBlock.subscribe((ev) => {
- const player = ev.player;
- const block = ev.block;
- const id = block.typeId;
- if (!SEAT_BLOCKS.has(id) && !BED_BLOCKS.has(id)) return;
+function furnitureAnchorTag(location) {
+  return "sb_anchor_" + location.x + "_" + location.y + "_" + location.z;
+}
 
- system.run(() => {
+function spawnFurnitureDisplay(dimension, blockId, location, rotation = 0) {
+  const config = DISPLAY_FURNITURE[blockId];
+  if (!config) return undefined;
+  const tag = furnitureAnchorTag(location);
+  const nearby = dimension.getEntities({
+    type: config.entityId,
+    location: { x: location.x + 0.5, y: location.y + 0.5, z: location.z + 0.5 },
+    maxDistance: 4
+  });
+  const existing = nearby.find(entity => entity.hasTag(tag));
+  if (existing) return existing;
+  const entity = dimension.spawnEntity(config.entityId, {
+    x: location.x + 0.5,
+    y: location.y,
+    z: location.z + 0.5
+  });
+  entity.addTag(tag);
+  entity.setRotation({ x: 0, y: rotation });
+  return entity;
+}
+
+function repairFurnitureNearPlayer(player) {
   try {
-   if (!player.isValid) return;
-   if (activeFurniturePassengers.has(player.id)) {
-    player.stopPassengerOfBlock();
-    activeFurniturePassengers.delete(player.id);
-    tell(player, "Du bist aufgestanden.");
-    return;
-   }
-   const pos = block.location;
-   const rotation = player.getRotation().y;
-   const blockPos = { x: Math.floor(pos.x), y: Math.floor(pos.y), z: Math.floor(pos.z) };
-   if (BED_BLOCKS.has(id)) {
-    player.startPassengerOfBlock(blockPos, { x: 0.5, y: 0.65, z: 0.5 }, rotation, 180, "Laying");
-    activeFurniturePassengers.add(player.id);
-    player.setSpawnPoint({ x: blockPos.x + 0.5, y: blockPos.y + 0.5, z: blockPos.z + 0.5, dimension: player.dimension });
-    tell(player, "Du liegst im Doppelbett. Dein persönlicher Spawnpunkt wurde gesetzt. Erneut benutzen, um aufzustehen.");
-   } else {
-    const seatY = id === "survivalbazaar:bar_stool" ? 0.58 : 0.43;
-    player.startPassengerOfBlock(blockPos, { x: 0.5, y: seatY, z: 0.5 }, rotation, 180, "Riding");
-    activeFurniturePassengers.add(player.id);
-    tell(player, "Du sitzt jetzt. Erneut benutzen, um aufzustehen.");
-   }
+    const dimension = player.dimension;
+    const center = player.location;
+    const existing = new Set();
+    for (const config of Object.values(DISPLAY_FURNITURE_BY_ENTITY)) {
+      for (const entity of dimension.getEntities({ type: config.entityId, location: center, maxDistance: 18 })) {
+        const tag = entity.getTags().find(value => value.startsWith("sb_anchor_"));
+        if (tag) existing.add(config.entityId + "|" + tag);
+      }
+    }
+    const cx = Math.floor(center.x), cy = Math.floor(center.y), cz = Math.floor(center.z);
+    for (let x = cx - 8; x <= cx + 8; x++) {
+      for (let y = cy - 3; y <= cy + 4; y++) {
+        for (let z = cz - 8; z <= cz + 8; z++) {
+          try {
+            const block = dimension.getBlock({ x, y, z });
+            const config = block && DISPLAY_FURNITURE[block.typeId];
+            if (!config) continue;
+            const tag = furnitureAnchorTag({ x, y, z });
+            const key = config.entityId + "|" + tag;
+            if (existing.has(key)) continue;
+            const entity = dimension.spawnEntity(config.entityId, { x: x + 0.5, y, z: z + 0.5 });
+            entity.addTag(tag);
+            existing.add(key);
+          } catch {}
+        }
+      }
+    }
   } catch (error) {
-   activeFurniturePassengers.delete(player.id);
-   tell(player, "Sitz-/Liegefunktion nicht verfügbar. Prüfe bitte, ob die Beta-API für dieses Add-on aktiviert ist.");
-   console.warn("[SurvivalBazaar] Möbel-Interaktion fehlgeschlagen:", error);
+    console.warn("[SurvivalBazaar] Möbel-Reparatur übersprungen:", error);
   }
- });
+}
+
+world.afterEvents.playerPlaceBlock.subscribe(event => {
+  const blockId = event.block.typeId;
+  if (!DISPLAY_FURNITURE[blockId]) return;
+  const location = {
+    x: Math.floor(event.block.location.x),
+    y: Math.floor(event.block.location.y),
+    z: Math.floor(event.block.location.z)
+  };
+  const rotation = event.player.getRotation().y;
+  system.run(() => {
+    try {
+      if (event.dimension.getBlock(location)?.typeId !== blockId) return;
+      spawnFurnitureDisplay(event.dimension, blockId, location, rotation);
+    } catch (error) {
+      tell(event.player, "Das Möbelmodell konnte nicht geladen werden. Bitte platziere den Gegenstand erneut.");
+      console.warn("[SurvivalBazaar] Möbel konnte nicht gespawnt werden:", error);
+    }
+  });
+});
+
+world.afterEvents.playerBreakBlock.subscribe(event => {
+  const blockId = event.brokenBlockPermutation.type.id;
+  const config = DISPLAY_FURNITURE[blockId];
+  if (!config) return;
+  const location = {
+    x: Math.floor(event.block.location.x),
+    y: Math.floor(event.block.location.y),
+    z: Math.floor(event.block.location.z)
+  };
+  const tag = furnitureAnchorTag(location);
+  system.run(() => {
+    try {
+      const nearby = event.dimension.getEntities({
+        type: config.entityId,
+        location: { x: location.x + 0.5, y: location.y + 0.5, z: location.z + 0.5 },
+        maxDistance: 4
+      });
+      for (const entity of nearby) if (entity.hasTag(tag)) entity.remove();
+    } catch (error) {
+      console.warn("[SurvivalBazaar] Möbelmodell konnte nicht entfernt werden:", error);
+    }
+  });
+});
+
+world.afterEvents.playerInteractWithEntity.subscribe(event => {
+  const player = event.player;
+  const entity = event.target;
+  const config = DISPLAY_FURNITURE_BY_ENTITY[entity.typeId];
+  if (!config?.seat) return;
+  const tag = entity.getTags().find(value => value.startsWith("sb_anchor_"));
+  const match = tag?.match(/^sb_anchor_(-?\\d+)_(-?\\d+)_(-?\\d+)$/);
+  if (!match) return;
+  const blockPosition = { x: Number(match[1]), y: Number(match[2]), z: Number(match[3]) };
+  system.run(() => {
+    try {
+      if (!player.isValid) return;
+      if (activeFurniturePassengers.has(player.id)) {
+        player.stopPassengerOfBlock();
+        activeFurniturePassengers.delete(player.id);
+        tell(player, "Du bist aufgestanden.");
+        return;
+      }
+      const isBed = config.seat === "bed";
+      const seatY = isBed ? 0.65 : (config.seat === "stool" ? 0.58 : 0.43);
+      player.startPassengerOfBlock(
+        blockPosition,
+        { x: 0.5, y: seatY, z: 0.5 },
+        player.getRotation().y,
+        180,
+        isBed ? "Laying" : "Riding"
+      );
+      activeFurniturePassengers.add(player.id);
+      if (isBed) {
+        player.setSpawnPoint({
+          x: blockPosition.x + 0.5,
+          y: blockPosition.y + 0.5,
+          z: blockPosition.z + 0.5,
+          dimension: player.dimension
+        });
+        tell(player, "Du liegst im Doppelbett. Dein persönlicher Spawnpunkt wurde gesetzt.");
+      } else {
+        tell(player, "Du sitzt jetzt auf dem Möbelstück.");
+      }
+    } catch (error) {
+      activeFurniturePassengers.delete(player.id);
+      tell(player, "Die Sitz-/Liegefunktion konnte nicht gestartet werden. Bitte versuche es erneut.");
+      console.warn("[SurvivalBazaar] Möbel-Interaktion fehlgeschlagen:", error);
+    }
+  });
 });
 
 world.afterEvents.playerSpawn.subscribe(ev => {
   if (ev.initialSpawn) {
     const p = ev.player;
+    activeFurniturePassengers.delete(p.id);
+    system.runTimeout(() => repairFurnitureNearPlayer(p), 60);
     system.runTimeout(() => {
       const money = balance(p);
       tell(p, "Willkommen! Dein Startguthaben: " + formatMoney(money) + ". Befehle: /market oder /shop; Admins: /admin.");

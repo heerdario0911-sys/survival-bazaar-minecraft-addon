@@ -1,0 +1,111 @@
+{
+  "format_version": "1.12.0",
+  "minecraft:geometry": [
+    {
+      "description": {
+        "identifier": "geometry.survivalbazaar.display_double_bed",
+        "texture_width": 16,
+        "texture_height": 16,
+        "visible_bounds_width": 2.5,
+        "visible_bounds_height": 1.5,
+        "visible_bounds_offset": [
+          0,
+          0.40625,
+          0
+        ]
+      },
+      "bones": [
+        {
+          "name": "root",
+          "pivot": [
+            -16,
+            -2,
+            -16
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -16,
+                0,
+                -16
+              ],
+              "size": [
+                32,
+                5,
+                32
+              ],
+              "uv": [
+                0,
+                0
+              ]
+            },
+            {
+              "origin": [
+                -16,
+                5,
+                -16
+              ],
+              "size": [
+                32,
+                3,
+                32
+              ],
+              "uv": [
+                0,
+                0
+              ]
+            },
+            {
+              "origin": [
+                -16,
+                8,
+                -16
+              ],
+              "size": [
+                32,
+                5,
+                4
+              ],
+              "uv": [
+                0,
+                0
+              ]
+            },
+            {
+              "origin": [
+                -16,
+                8,
+                12
+              ],
+              "size": [
+                32,
+                5,
+                4
+              ],
+              "uv": [
+                0,
+                0
+              ]
+            },
+            {
+              "origin": [
+                -16,
+                8,
+                -12
+              ],
+              "size": [
+                32,
+                1,
+                24
+              ],
+              "uv": [
+                0,
+                0
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

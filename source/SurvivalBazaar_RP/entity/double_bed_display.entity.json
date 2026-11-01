@@ -1,0 +1,20 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "survivalbazaar:double_bed_display",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/blocks/bed"
+      },
+      "geometry": {
+        "default": "geometry.survivalbazaar.display_double_bed"
+      },
+      "render_controllers": [
+        "controller.render.default"
+      ]
+    }
+  }
+}

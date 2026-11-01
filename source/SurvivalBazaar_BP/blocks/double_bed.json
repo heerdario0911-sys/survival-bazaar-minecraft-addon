@@ -1,5 +1,5 @@
 {
-  "format_version": "1.21.0",
+  "format_version": "1.21.60",
   "minecraft:block": {
     "description": {
       "identifier": "survivalbazaar:double_bed",
@@ -9,18 +9,28 @@
     },
     "components": {
       "minecraft:geometry": {
-        "identifier": "geometry.survivalbazaar.double_bed"
+        "identifier": "geometry.survivalbazaar.furniture_anchor"
       },
       "minecraft:material_instances": {
         "*": {
-          "texture": "bed",
-          "render_method": "opaque"
+          "texture": "furniture_anchor",
+          "render_method": "blend"
         }
       },
+      "minecraft:collision_box": false,
+      "minecraft:selection_box": true,
       "minecraft:destructible_by_mining": {
-        "seconds_to_destroy": 1.0
+        "seconds_to_destroy": 1
       },
-      "minecraft:collision_box": true,
+      "minecraft:item_visual": {
+        "geometry": "minecraft:geometry.full_block",
+        "material_instances": {
+          "*": {
+            "texture": "bed",
+            "render_method": "opaque"
+          }
+        }
+      },
       "minecraft:loot": "loot_tables/blocks/double_bed.json"
     }
   }

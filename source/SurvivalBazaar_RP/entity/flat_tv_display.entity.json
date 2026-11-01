@@ -1,0 +1,20 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "survivalbazaar:flat_tv_display",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/blocks/tv"
+      },
+      "geometry": {
+        "default": "geometry.survivalbazaar.display_flat_tv"
+      },
+      "render_controllers": [
+        "controller.render.default"
+      ]
+    }
+  }
+}

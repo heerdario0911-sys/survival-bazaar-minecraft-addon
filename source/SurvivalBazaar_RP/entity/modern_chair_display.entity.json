@@ -1,0 +1,20 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "survivalbazaar:modern_chair_display",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/blocks/chair"
+      },
+      "geometry": {
+        "default": "geometry.survivalbazaar.display_modern_chair"
+      },
+      "render_controllers": [
+        "controller.render.default"
+      ]
+    }
+  }
+}

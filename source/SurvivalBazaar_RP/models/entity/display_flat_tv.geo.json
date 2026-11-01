@@ -1,0 +1,95 @@
+{
+  "format_version": "1.12.0",
+  "minecraft:geometry": [
+    {
+      "description": {
+        "identifier": "geometry.survivalbazaar.display_flat_tv",
+        "texture_width": 16,
+        "texture_height": 16,
+        "visible_bounds_width": 3.5,
+        "visible_bounds_height": 2.6875,
+        "visible_bounds_offset": [
+          0,
+          1.09375,
+          0
+        ]
+      },
+      "bones": [
+        {
+          "name": "root",
+          "pivot": [
+            -24,
+            5,
+            2
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -24,
+                5,
+                -1
+              ],
+              "size": [
+                48,
+                30,
+                3
+              ],
+              "uv": [
+                0,
+                0
+              ]
+            },
+            {
+              "origin": [
+                -21,
+                8,
+                -2
+              ],
+              "size": [
+                42,
+                24,
+                1
+              ],
+              "uv": [
+                0,
+                0
+              ]
+            },
+            {
+              "origin": [
+                -6,
+                3,
+                0
+              ],
+              "size": [
+                12,
+                2,
+                2
+              ],
+              "uv": [
+                0,
+                0
+              ]
+            },
+            {
+              "origin": [
+                -4,
+                0,
+                0
+              ],
+              "size": [
+                8,
+                3,
+                2
+              ],
+              "uv": [
+                0,
+                0
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

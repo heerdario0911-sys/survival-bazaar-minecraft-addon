@@ -1,0 +1,20 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "survivalbazaar:fridge_display",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/blocks/fridge"
+      },
+      "geometry": {
+        "default": "geometry.survivalbazaar.display_fridge"
+      },
+      "render_controllers": [
+        "controller.render.default"
+      ]
+    }
+  }
+}

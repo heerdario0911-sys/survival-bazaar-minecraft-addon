@@ -1,0 +1,111 @@
+{
+  "format_version": "1.12.0",
+  "minecraft:geometry": [
+    {
+      "description": {
+        "identifier": "geometry.survivalbazaar.display_fridge",
+        "texture_width": 16,
+        "texture_height": 16,
+        "visible_bounds_width": 2.5,
+        "visible_bounds_height": 3.5,
+        "visible_bounds_offset": [
+          0,
+          1.5,
+          0
+        ]
+      },
+      "bones": [
+        {
+          "name": "root",
+          "pivot": [
+            -16,
+            0,
+            1
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -16,
+                0,
+                -5
+              ],
+              "size": [
+                32,
+                48,
+                12
+              ],
+              "uv": [
+                0,
+                0
+              ]
+            },
+            {
+              "origin": [
+                -14,
+                2,
+                -6
+              ],
+              "size": [
+                28,
+                44,
+                1
+              ],
+              "uv": [
+                0,
+                0
+              ]
+            },
+            {
+              "origin": [
+                -12,
+                22,
+                -7
+              ],
+              "size": [
+                24,
+                1,
+                1
+              ],
+              "uv": [
+                0,
+                0
+              ]
+            },
+            {
+              "origin": [
+                11,
+                27,
+                -7
+              ],
+              "size": [
+                1,
+                8,
+                1
+              ],
+              "uv": [
+                0,
+                0
+              ]
+            },
+            {
+              "origin": [
+                11,
+                8,
+                -7
+              ],
+              "size": [
+                1,
+                8,
+                1
+              ],
+              "uv": [
+                0,
+                0
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

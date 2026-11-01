@@ -57,6 +57,9 @@
     },
     "armchair": {
       "textures": "textures/blocks/armchair"
+    },
+    "furniture_anchor": {
+      "textures": "textures/blocks/furniture_anchor"
     }
   }
 }
