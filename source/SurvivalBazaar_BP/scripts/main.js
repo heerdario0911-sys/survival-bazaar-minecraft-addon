@@ -984,7 +984,7 @@ async function openFridge(player, block, title = "KÜHLSCHRANK") {
   const data = readFurnitureData(block);
   const entries = Object.entries(data.items ?? {}).filter(([id, qty]) => typeof qty === "number" && qty > 0);
   const form = new ActionFormData().title("§l§b" + title)
-    .body("§7Dein persönlicher Möbelspeicher.\n§fGelagerte Stapel: §b" + entries.length);
+    .body("§7Gemeinsamer Speicher dieses Möbelstücks.\n§fGelagerte Stapel: §b" + entries.length);
   form.button("§aGegenstand einlagern");
   form.button("§eGegenstand entnehmen");
   form.button("§7Schließen");
@@ -1010,11 +1010,12 @@ async function openFridge(player, block, title = "KÜHLSCHRANK") {
         tell(player, "Der Möbelspeicher ist voll.");
         return openFridge(player, block, title);
       }
+      writeFurnitureData(block, nextData);
       if (!removeItems(player, id, qty)) {
+        writeFurnitureData(block, data);
         tell(player, "Du hast nicht genug davon im Inventar.");
         return openFridge(player, block, title);
       }
-      writeFurnitureData(block, nextData);
       tell(player, qty + "× " + id + " eingelagert.");
     } catch {
       tell(player, "Diese Item-ID ist in deiner Bedrock-Version nicht verfügbar.");
