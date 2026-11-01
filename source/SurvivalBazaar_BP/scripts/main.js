@@ -495,19 +495,42 @@ function removeItems(player, typeId, amount) {
   return left === 0;
 }
 async function openMain(player) {
+  buildCompleteCatalog();
   const money = balance(player);
+  const cart = getBuyCart(player);
   const form = new ActionFormData()
     .title("§l§6SURVIVAL BAZAAR")
-    .body("§fDein Kontostand: §6" + formatMoney(money) + "\n§7Wähle einen Bereich.")
-    .button("§aServer-Shop\n§7Items kaufen und verkaufen")
-    .button("§bSpieler-Marktplatz\n§7Angebote anderer Spieler")
-    .button("§eKontostand");
+    .body("§6DEIN MARKT\n§7Wähle einen Bereich. Guthaben und Warenkorb bleiben hier immer direkt erreichbar.\n\n§eGUTHABEN: §a" + formatMoney(money) + "\n§eWARENKORB: §f" + cart.size + " Artikel – " + formatMoney(cartTotal(cart)));
+  form.button("§a§lKAUFEN\n§7Server-Sortiment und Kategorien");
+  form.button("§c§lVERKAUFEN\n§7Gegenstände aus deinem Inventar");
+  form.button("§b§lSPIELER-MARKT\n§7Angebote anderer Spieler");
+  form.button("§d§lMIT PERSON TAUSCHEN\n§7Direkten Handel vorbereiten");
+  form.button("§e§lGUTHABEN\n§6" + formatMoney(money));
+  form.button("§6§lWARENKORB\n§7" + cart.size + " Artikel – " + formatMoney(cartTotal(cart)));
   form.button("§7Schließen");
   const res = await form.show(player);
-  if (res.canceled) return;
-  if (res.selection === 0) return openShop(player);
-  if (res.selection === 1) return openMarket(player);
-  if (res.selection === 2) return tell(player, "Du besitzt §6" + formatMoney(balance(player)) + "§r.");
+  if (res.canceled || res.selection === 6) return;
+  if (res.selection === 0) return openBuyShop(player);
+  if (res.selection === 1) return openSellCategories(player);
+  if (res.selection === 2) return openMarket(player);
+  if (res.selection === 3) return openDirectTradeInfo(player);
+  if (res.selection === 4) return openBalancePanel(player);
+  if (res.selection === 5) return openBuyBasket(player, openMain);
+}
+async function openBalancePanel(player) {
+  const money = balance(player);
+  const form = new ActionFormData().title("§l§eGUTHABEN")
+    .body("§7Dein persönliches Bazaar-Konto\n\n§eAktueller Kontostand:\n§6§l" + formatMoney(money))
+    .button("§7Zurück zum Hauptmenü");
+  await form.show(player);
+  return openMain(player);
+}
+async function openDirectTradeInfo(player) {
+  const form = new ActionFormData().title("§l§dDIREKTER SPIELERHANDEL")
+    .body("§7Hier soll später der Handel mit einer bestimmten Person stattfinden.\n\n§eGeplant:\n§f• Spieler aus der Welt auswählen\n§f• Angebot mit Items und Coins erstellen\n§f• Beide Spieler bestätigen den Tausch\n\n§cDer direkte Handel ist noch nicht aktiviert. Es wird noch kein Item und kein Geld übertragen.")
+    .button("§7Zurück zum Hauptmenü");
+  await form.show(player);
+  return openMain(player);
 }
 async function openShop(player) {
   const form = new ActionFormData().title("§l§aSERVER-SHOP")
