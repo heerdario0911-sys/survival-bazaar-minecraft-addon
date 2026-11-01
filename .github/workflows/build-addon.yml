@@ -1,0 +1,35 @@
+name: Survival Bazaar Add-on bauen
+
+on:
+  push:
+    paths:
+      - 'source/**'
+      - '.github/workflows/build-addon.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: JavaScript-Syntax prüfen
+        run: node --check source/SurvivalBazaar_BP/scripts/main.js
+      - name: Behavior- und Resource-Pack paketieren
+        run: |
+          set -e
+          test -f source/SurvivalBazaar_BP/manifest.json
+          test -f source/SurvivalBazaar_RP/manifest.json
+          mkdir -p dist
+          (cd source && zip -qr ../dist/SurvivalBazaar_BP.mcpack SurvivalBazaar_BP)
+          (cd source && zip -qr ../dist/SurvivalBazaar_RP.mcpack SurvivalBazaar_RP)
+          cd dist
+          zip -q SurvivalBazaar.mcaddon SurvivalBazaar_BP.mcpack SurvivalBazaar_RP.mcpack
+          unzip -t SurvivalBazaar.mcaddon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SurvivalBazaar-Bedrock-26.60
+          path: dist/SurvivalBazaar.mcaddon
+          if-no-files-found: error
