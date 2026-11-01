@@ -755,12 +755,12 @@ async function chooseSellQuantity(player,entry,category,group,returnTo=()=>openS
   const res=await modal.show(player);
   if(res.canceled)return returnTo();
   const qty=Math.floor(Number(res.formValues?.[0]));
-  if(!Number.isInteger(qty)||qty<1||qty>owned){tell(player,"Ungültige Menge. Du besitzt "+owned+".");return chooseSellQuantity(player,entry,category,group);}
+  if(!Number.isInteger(qty)||qty<1||qty>owned){tell(player,"Ungültige Menge. Du besitzt "+owned+".");return chooseSellQuantity(player,entry,category,group,returnTo);}
   if(!removeItems(player,id,qty)){tell(player,"Gegenstand konnte nicht entnommen werden.");return returnTo();}
   const total=getPriceCents(id,"sell",basePrice)*qty;
   setBalance(player.id,balance(player)+total);
   tell(player,qty+"× "+name+" verkauft für "+formatMoney(total)+".");
-  return openSellItems(player,category,group);
+  return returnTo();
 }
 
 
