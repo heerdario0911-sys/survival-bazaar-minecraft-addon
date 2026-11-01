@@ -1,0 +1,27 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:block": {
+    "description": {
+      "identifier": "survivalbazaar:flat_tv",
+      "menu_category": {
+        "category": "items"
+      }
+    },
+    "components": {
+      "minecraft:geometry": {
+        "identifier": "geometry.survivalbazaar.flat_tv"
+      },
+      "minecraft:material_instances": {
+        "*": {
+          "texture": "tv",
+          "render_method": "opaque"
+        }
+      },
+      "minecraft:destructible_by_mining": {
+        "seconds_to_destroy": 1.0
+      },
+      "minecraft:collision_box": true,
+      "minecraft:loot": "loot_tables/blocks/flat_tv.json"
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:block": {
+    "description": {
+      "identifier": "survivalbazaar:modern_sofa",
+      "menu_category": {
+        "category": "items"
+      }
+    },
+    "components": {
+      "minecraft:geometry": {
+        "identifier": "geometry.survivalbazaar.modern_sofa"
+      },
+      "minecraft:material_instances": {
+        "*": {
+          "texture": "sofa",
+          "render_method": "opaque"
+        }
+      },
+      "minecraft:destructible_by_mining": {
+        "seconds_to_destroy": 1.0
+      },
+      "minecraft:collision_box": true,
+      "minecraft:loot": "loot_tables/blocks/modern_sofa.json"
+    }
+  }
+}
