@@ -1,12 +1,12 @@
 {
   "format_version": 2,
   "header": {
-    "name": "Survival Bazaar - M\u00f6bel & Texturen",
-    "description": "Eigene moderne 3D-M\u00f6belmodelle und Texturen",
+    "name": "Survival Bazaar - Möbel & Texturen",
+    "description": "Eigene moderne 3D-Möbelmodelle und Texturen",
     "uuid": "d4e5f6a7-b8c9-401d-2e3f-4a5b6c7d8e9f",
     "version": [
       1,
-      4,
+      5,
       0
     ],
     "min_engine_version": [
@@ -21,7 +21,7 @@
       "uuid": "e5f6a7b8-c9d0-412e-3f4a-5b6c7d8e9f0a",
       "version": [
         1,
-        4,
+        5,
         0
       ]
     }
