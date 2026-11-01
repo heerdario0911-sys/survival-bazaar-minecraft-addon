@@ -99,7 +99,7 @@ jobs:
           # Die im Shop gelisteten eigenen Möbel müssen als Blöcke existieren.
           import re
           script = (bp / "scripts/main.js").read_text(encoding="utf-8")
-          custom_shop_ids = set(re.findall(r'id:\\s*"(survivalbazaar:[a-z0-9_]+)"', script))
+          custom_shop_ids = set(re.findall(r'id:\s*"(survivalbazaar:[a-z0-9_]+)"', script))
           block_ids = {json.loads(p.read_text())["minecraft:block"]["description"]["identifier"] for p in (bp / "blocks").glob("*.json")}
           assert custom_shop_ids <= block_ids, f"Shop-Möbel ohne Blockdefinition: {sorted(custom_shop_ids - block_ids)}"
           print("JSON, Block-/Entity-IDs, Rideable-Entities, Loot-Tabellen, 3D-Modelle, Texturzuordnungen und PNG-Dateien geprüft.")
