@@ -70,8 +70,8 @@ const SHOP = [
   ,{ id: "survivalbazaar:floor_lamp", name: "Stehlampe", buy: 20, sell: 7 }
   ,{ id: "survivalbazaar:armchair", name: "Sessel", buy: 24, sell: 9 }
   ,{ id: "survivalbazaar:grandfather_clock", name: "Standuhr", buy: 38, sell: 14 }
-  ,{ id: "survivalbazaar:hanging_guitar", name: "Wandgitarre", buy: 29, sell: 10 }
-  ,{ id: "survivalbazaar:bar_counter", name: "Bartresen", buy: 42, sell: 16 }
+  ,{ id: "survivalbazaar:hanging_guitar", name: "Gitarre", buy: 29, sell: 10 }
+  ,{ id: "survivalbazaar:bar_counter", name: "Bartisch", buy: 42, sell: 16 }
   ,{ id: "survivalbazaar:bar_stool", name: "Barhocker", buy: 18, sell: 6 }
   ,{ id: "survivalbazaar:wall_shelf", name: "Wandregal", buy: 16, sell: 6 }
   ,{ id: "survivalbazaar:potted_plant", name: "Topfpflanze", buy: 9, sell: 3 }
