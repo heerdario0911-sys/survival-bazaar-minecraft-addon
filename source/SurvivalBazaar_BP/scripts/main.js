@@ -505,7 +505,7 @@ async function addToBuyCart(player, entry, qty, returnTo) {
 async function chooseBuyQuantity(player, entry, returnTo) {
   const [id, name] = entry;
   const modal = new ModalFormData().title("§l§a" + name)
-    .textField("Anzahl zum Warenkorb hinzufügen (1–64)", "z. B. 4", "1");
+    .textField("Anzahl zum Warenkorb hinzufügen (1–64)", "z. B. 4", { defaultValue: "1" });
   const res = await modal.show(player);
   if (res.canceled) return returnTo();
   const qty = Number(String(res.formValues?.[0] ?? "").trim());
@@ -527,7 +527,7 @@ async function openBuyBasket(player, returnTo = openBuyShop) {
   if (res.selection < entries.length) {
     const item = entries[res.selection];
     const modal = new ModalFormData().title("§l§e" + item.name)
-      .textField("Neue Menge (0 = entfernen, maximal 64)", "Anzahl", String(item.qty));
+      .textField("Neue Menge (0 = entfernen, maximal 64)", "Anzahl", { defaultValue: String(item.qty) });
     const edit = await modal.show(player);
     if (edit.canceled) return openBuyBasket(player, returnTo);
     const qty = Number(String(edit.formValues?.[0] ?? "").trim());
@@ -606,7 +606,7 @@ function allBuyEntries() {
 
 async function openBuySearch(player) {
   const modal = new ModalFormData().title("§l§bGEGENSTÄNDE SUCHEN")
-    .textField("Suchbegriff (Name oder ID)", "z. B. Diamant, Eiche, minecraft:stone", "");
+    .textField("Suchbegriff (Name oder ID)", "z. B. Diamant, Eiche, minecraft:stone", { defaultValue: "" });
   const res = await modal.show(player);
   if (res.canceled) return openBuyShop(player);
   const query = String(res.formValues?.[0] ?? "").trim().toLocaleLowerCase("de-DE");
@@ -717,7 +717,7 @@ async function openSellItems(player, category, group) {
   const ownedAmounts = group.items.map(([id]) => countItem(player, id));
   for (let i = 0; i < group.items.length; i++) {
     const [id, name, basePrice] = group.items[i];
-    form.textField(name + " – " + formatMoney(getPriceCents(id, "sell", basePrice)) + " / Stück (Besitz: " + ownedAmounts[i] + ")", "Anzahl", "0");
+    form.textField(name + " – " + formatMoney(getPriceCents(id, "sell", basePrice)) + " / Stück (Besitz: " + ownedAmounts[i] + ")", "Anzahl", { defaultValue: "0" });
   }
   const res = await form.show(player);
   if (res.canceled) return openSellSubcategories(player, category);
@@ -767,7 +767,7 @@ async function openAdminMenu(player) {
 
 async function editPrice(player, itemId, itemName, side, currentCents, returnTo) {
   const modal = new ModalFormData().title("Preis bearbeiten")
-    .textField(itemName + " – " + (side === "buy" ? "Kaufpreis" : "Verkaufspreis") + " in Euro (€)", "z. B. 12,50 €", formatMoney(currentCents));
+    .textField(itemName + " – " + (side === "buy" ? "Kaufpreis" : "Verkaufspreis") + " in Euro (€)", "z. B. 12,50 €", { defaultValue: formatMoney(currentCents) });
   const res = await modal.show(player);
   if (res.canceled) return returnTo();
   const cents = parseMoneyToCents(res.formValues?.[0]);
@@ -887,8 +887,8 @@ async function createListing(player) {
   const itemId = held.typeId;
   const itemName = held.nameTag || itemId.replace("minecraft:", "").replaceAll("_", " ");
   const modal = new ModalFormData().title("Item anbieten")
-    .textField("Anzahl (max. 64)", "z. B. 1", String(held.amount))
-    .textField("Gesamtpreis in Euro (€)", "z. B. 12,50 €", "10,00 €");
+    .textField("Anzahl (max. 64)", "z. B. 1", { defaultValue: String(held.amount) })
+    .textField("Gesamtpreis in Euro (€)", "z. B. 12,50 €", { defaultValue: "10,00 €" });
   const res = await modal.show(player);
   if (res.canceled) return openMarket(player);
   const amount = Math.floor(Number(res.formValues?.[0]));
@@ -952,11 +952,198 @@ system.beforeEvents.startup.subscribe(({ customCommandRegistry }) => {
       if (!(player instanceof Player)) {
         return { status: CustomCommandStatus.Failure, message: "Dieser Befehl kann nur von Spielern verwendet werden." };
       }
-      system.run(() => openAdminMenu(player).catch(() => tell(player, "Admin-Menü konnte nicht geöffnet werden.")));
+      system.run(() => openAdminMenu(player).catch((error) => tell(player, "Admin-Menü-Fehler: " + (error?.message ?? String(error)))));
       return { status: CustomCommandStatus.Success };
     }
   );
 });
+
+const FURNITURE_IDS = new Set([
+  "survivalbazaar:armchair", "survivalbazaar:bar_counter", "survivalbazaar:bar_stool",
+  "survivalbazaar:bookshelf", "survivalbazaar:coffee_table", "survivalbazaar:dining_table",
+  "survivalbazaar:double_bed", "survivalbazaar:flat_tv", "survivalbazaar:floor_lamp",
+  "survivalbazaar:fridge", "survivalbazaar:grandfather_clock", "survivalbazaar:hanging_guitar",
+  "survivalbazaar:modern_chair", "survivalbazaar:modern_sofa", "survivalbazaar:potted_plant",
+  "survivalbazaar:wall_mirror", "survivalbazaar:wall_shelf", "survivalbazaar:wardrobe"
+]);
+function furnitureKey(block) {
+  return "bazaar:f:" + block.dimension.id.replace(/[^a-z0-9]/gi, "").slice(0, 12) + ":" + block.x + ":" + block.y + ":" + block.z;
+}
+function readFurnitureData(block) {
+  try {
+    const raw = world.getDynamicProperty(furnitureKey(block));
+    return typeof raw === "string" ? JSON.parse(raw) : {};
+  } catch { return {}; }
+}
+function writeFurnitureData(block, data) {
+  const raw = JSON.stringify(data);
+  if (raw.length > 30000) throw new Error("Der Möbelspeicher ist voll.");
+  world.setDynamicProperty(furnitureKey(block), raw);
+}
+async function openFridge(player, block, title = "KÜHLSCHRANK") {
+  const data = readFurnitureData(block);
+  const entries = Object.entries(data.items ?? {}).filter(([id, qty]) => typeof qty === "number" && qty > 0);
+  const form = new ActionFormData().title("§l§b" + title)
+    .body("§7Gemeinsamer Speicher dieses Möbelstücks.\n§fGelagerte Stapel: §b" + entries.length);
+  form.button("§aGegenstand einlagern");
+  form.button("§eGegenstand entnehmen");
+  form.button("§7Schließen");
+  const res = await form.show(player);
+  if (res.canceled || res.selection === 2) return;
+  if (res.selection === 0) {
+    const modal = new ModalFormData().title("Einlagern")
+      .textField("Item-ID (z. B. minecraft:apple)", "minecraft:apple", { defaultValue: "minecraft:apple" })
+      .textField("Anzahl (1–64)", "Anzahl", { defaultValue: "1" });
+    const input = await modal.show(player);
+    if (input.canceled) return openFridge(player, block, title);
+    const id = String(input.formValues?.[0] ?? "").trim();
+    const qty = Number(String(input.formValues?.[1] ?? "").trim());
+    if (!/^[a-z0-9_.-]+:[a-z0-9_./-]+$/i.test(id) || !Number.isInteger(qty) || qty < 1 || qty > 64) {
+      tell(player, "Ungültige Item-ID oder Anzahl. Erlaubt sind 1 bis 64.");
+      return openFridge(player, block, title);
+    }
+    try {
+      new ItemStack(id, 1);
+      const nextData = { ...data, items: { ...(data.items ?? {}) } };
+      nextData.items[id] = (nextData.items[id] ?? 0) + qty;
+      if (JSON.stringify(nextData).length > 30000) {
+        tell(player, "Der Möbelspeicher ist voll.");
+        return openFridge(player, block, title);
+      }
+      writeFurnitureData(block, nextData);
+      if (!removeItems(player, id, qty)) {
+        writeFurnitureData(block, data);
+        tell(player, "Du hast nicht genug davon im Inventar.");
+        return openFridge(player, block, title);
+      }
+      tell(player, qty + "× " + id + " eingelagert.");
+    } catch {
+      tell(player, "Diese Item-ID ist in deiner Bedrock-Version nicht verfügbar.");
+    }
+    return openFridge(player, block, title);
+  }
+  if (entries.length === 0) {
+    tell(player, "Der Speicher ist leer.");
+    return openFridge(player, block, title);
+  }
+  const choose = new ActionFormData().title("§l§eENTNEHMEN").body("§7Wähle einen Gegenstand.");
+  for (const [id, qty] of entries) choose.button(id + "\n§7Gelagert: " + qty);
+  choose.button("§7Zurück");
+  const selected = await choose.show(player);
+  if (selected.canceled || selected.selection === entries.length) return openFridge(player, block, title);
+  const [id, available] = entries[selected.selection] ?? [];
+  if (!id) return openFridge(player, block, title);
+  const amountForm = new ModalFormData().title("Entnehmen")
+    .textField("Anzahl (maximal " + available + ")", "Anzahl", { defaultValue: String(Math.min(available, 1)) });
+  const amountResult = await amountForm.show(player);
+  if (amountResult.canceled) return openFridge(player, block, title);
+  const qty = Number(String(amountResult.formValues?.[0] ?? "").trim());
+  if (!Number.isInteger(qty) || qty < 1 || qty > available) {
+    tell(player, "Ungültige Anzahl.");
+    return openFridge(player, block, title);
+  }
+  if (!canFitItem(player, id, qty)) {
+    tell(player, "Dein Inventar hat nicht genug Platz.");
+    return openFridge(player, block, title);
+  }
+  const nextData = { ...data, items: { ...(data.items ?? {}) } };
+  nextData.items[id] -= qty;
+  if (nextData.items[id] <= 0) delete nextData.items[id];
+  writeFurnitureData(block, nextData);
+  if (!addItem(player, id, qty)) {
+    writeFurnitureData(block, data);
+    tell(player, "Die Entnahme wurde abgebrochen; dein Inventar hat nicht genug Platz.");
+    return openFridge(player, block, title);
+  }
+  tell(player, qty + "× " + id + " entnommen.");
+  return openFridge(player, block, title);
+}
+async function mountFurniture(player, block, entityId) {
+  const location = { x: block.x + 0.5, y: block.y, z: block.z + 0.5 };
+  const nearby = block.dimension.getEntities({ type: entityId, location, maxDistance: 1.25 });
+  let seat = nearby[0];
+  if (!seat) seat = block.dimension.spawnEntity(entityId, location);
+  const rideable = seat.getComponent("minecraft:rideable");
+  if (!rideable) {
+    tell(player, "Der Sitz konnte nicht initialisiert werden.");
+    return;
+  }
+  if (rideable.getRiders().length >= rideable.seatCount) {
+    tell(player, "Dieser Sitzplatz ist bereits belegt.");
+    return;
+  }
+  if (!rideable.addRider(player)) tell(player, "Du konntest dich nicht auf das Möbel setzen.");
+}
+async function interactWithFurniture(player, block) {
+  const id = block.typeId;
+  const data = readFurnitureData(block);
+  const storageLabels = {
+    "survivalbazaar:fridge": "KÜHLSCHRANK",
+    "survivalbazaar:wardrobe": "KLEIDERSCHRANK",
+    "survivalbazaar:bookshelf": "BÜCHERREGAL",
+    "survivalbazaar:wall_shelf": "WANDREGAL",
+    "survivalbazaar:bar_counter": "BARTHEKE",
+    "survivalbazaar:coffee_table": "COUCHTISCH",
+    "survivalbazaar:dining_table": "ESSTISCH",
+    "survivalbazaar:grandfather_clock": "STANDUHR",
+    "survivalbazaar:hanging_guitar": "GITARRENSCHRANK",
+    "survivalbazaar:potted_plant": "PFLANZENKÜBEL",
+    "survivalbazaar:wall_mirror": "SPIEGELSCHRANK"
+  };
+  if (storageLabels[id]) return openFridge(player, block, storageLabels[id]);
+  const seats = {
+    "survivalbazaar:modern_sofa": "survivalbazaar:modern_sofa_display",
+    "survivalbazaar:modern_chair": "survivalbazaar:modern_chair_display",
+    "survivalbazaar:armchair": "survivalbazaar:armchair_display",
+    "survivalbazaar:bar_stool": "survivalbazaar:bar_stool_display"
+  };
+  if (seats[id]) return mountFurniture(player, block, seats[id]);
+  if (id === "survivalbazaar:double_bed") {
+    const time = world.getTimeOfDay();
+    if (time >= 12500 || time < 500) {
+      world.setTimeOfDay(0);
+      tell(player, "Du hast dich ausgeruht. Die Nacht wurde übersprungen.");
+    } else {
+      tell(player, "Du kannst dich erst nachts ausruhen.");
+    }
+    return;
+  }
+  if (id === "survivalbazaar:flat_tv" || id === "survivalbazaar:floor_lamp") {
+    const current = block.permutation.getState("survivalbazaar:is_on") === true;
+    const next = !current;
+    block.setPermutation(block.permutation.withState("survivalbazaar:is_on", next));
+    tell(player, (id.endsWith("flat_tv") ? "Fernseher" : "Lampe") + (next ? " eingeschaltet." : " ausgeschaltet.") + (id.endsWith("floor_lamp") && next ? " §7Die Lampe spendet jetzt Licht." : ""));
+    try { player.playSound("random.click"); } catch {}
+    return;
+  }
+  const labels = {
+    "survivalbazaar:armchair": "Polstersessel", "survivalbazaar:bar_counter": "Bartheke",
+    "survivalbazaar:bar_stool": "Barhocker", "survivalbazaar:bookshelf": "Bücherregal",
+    "survivalbazaar:coffee_table": "Couchtisch", "survivalbazaar:dining_table": "Esstisch",
+    "survivalbazaar:double_bed": "Doppelbett", "survivalbazaar:grandfather_clock": "Standuhr",
+    "survivalbazaar:hanging_guitar": "Gitarre", "survivalbazaar:modern_chair": "Moderner Stuhl",
+    "survivalbazaar:modern_sofa": "Sofa", "survivalbazaar:potted_plant": "Pflanze",
+    "survivalbazaar:wall_mirror": "Wandspiegel", "survivalbazaar:wall_shelf": "Wandregal",
+    "survivalbazaar:wardrobe": "Kleiderschrank"
+  };
+  const name = labels[id] ?? "Möbelstück";
+  const form = new ActionFormData().title("§l§6" + name.toUpperCase())
+    .body("§7Du hast " + name + " benutzt.\n§8Interaktionsmenü des Survival Bazaar.");
+  if (id === "survivalbazaar:wardrobe") form.button("§aKleiderschrank öffnen");
+  else form.button("§aBenutzen");
+  form.button("§7Schließen");
+  const result = await form.show(player);
+  if (result.canceled || result.selection !== 0) return;
+  if (id === "survivalbazaar:wardrobe") tell(player, "Der Kleiderschrank wurde geöffnet. Die Ausrüstungsverwaltung wird in einer separaten Funktion ergänzt.");
+  else tell(player, name + " benutzt.");
+}
+world.afterEvents.playerInteractWithBlock.subscribe(event => {
+  if (!event.isFirstEvent || !event.player || !FURNITURE_IDS.has(event.block.typeId)) return;
+  system.run(() => interactWithFurniture(event.player, event.block).catch(error => {
+    tell(event.player, "Möbel-Fehler: " + (error?.message ?? String(error)));
+  }));
+});
+
 world.afterEvents.playerSpawn.subscribe(ev => {
   if (ev.initialSpawn) {
     const p = ev.player;
