@@ -618,6 +618,7 @@ async function checkoutBuyBasket(player, returnTo) {
 }
 
 async function openBuyShop(player) {
+  buildCompleteCatalog();
   const cart = getBuyCart(player);
   const form = new ActionFormData().title("§l§aITEMS KAUFEN")
     .body("§7Wähle eine Kategorie oder suche direkt im gesamten Katalog.\n§7Warenkorb: §e" + cart.size + " verschiedene Items – " + formatMoney(cartTotal(cart)))
@@ -650,6 +651,7 @@ function allBuyEntries() {
 }
 
 async function openBuySearch(player) {
+  buildCompleteCatalog();
   const modal = new ModalFormData().title("§l§bGEGENSTÄNDE SUCHEN")
     .textField("Suchbegriff (Name oder ID)", "z. B. Diamant, Eiche, minecraft:stone", { defaultValue: "" });
   const res = await modal.show(player);
@@ -752,6 +754,7 @@ async function purchaseBuyEntry(player, entry, returnTo) {
 }
 
 async function openSellCategories(player) {
+  buildCompleteCatalog();
   const form = new ActionFormData().title("§l§cITEMS VERKAUFEN")
     .body("§7Wähle eine Kategorie oder suche direkt im gesamten Verkaufskatalog.")
     .button("§b🔎 Gegenstände suchen\n§7Alle Verkaufsartikel durchsuchen");
@@ -780,6 +783,7 @@ function allSellEntries() {
   return entries;
 }
 async function openSellSearch(player) {
+  buildCompleteCatalog();
   const modal = new ModalFormData().title("§l§bGEGENSTÄNDE SUCHEN")
     .textField("Suchbegriff (Name oder ID)", "z. B. Diamant, Eiche, minecraft:stone", { defaultValue: "" });
   const res = await modal.show(player);
@@ -922,6 +926,7 @@ async function editPrice(player, itemId, itemName, side, currentCents, returnTo)
 }
 
 async function openAdminBuyPrices(player) {
+  buildCompleteCatalog();
   const form = new ActionFormData().title("§l§aKAUFPREISE").body("§7Wähle eine Hauptkategorie.");
   for (const category of BUY_CATEGORIES) form.button(category.name);
   form.button("§7Zurück");
@@ -958,6 +963,7 @@ async function openAdminBuyItems(player, category, group) {
 }
 
 async function openAdminSellCategories(player) {
+  buildCompleteCatalog();
   const form = new ActionFormData().title("§l§eVERKAUFSPREISE").body("§7Wähle eine Hauptkategorie.");
   for (const category of SELL_CATEGORIES) form.button(category.name);
   form.button("§7Zurück");
