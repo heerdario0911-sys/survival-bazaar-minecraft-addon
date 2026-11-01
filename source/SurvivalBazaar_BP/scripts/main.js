@@ -995,55 +995,55 @@ async function openFridge(player, block, title = "KÜHLSCHRANK") {
       .textField("Item-ID (z. B. minecraft:apple)", "minecraft:apple", { defaultValue: "minecraft:apple" })
       .textField("Anzahl (1–64)", "Anzahl", { defaultValue: "1" });
     const input = await modal.show(player);
-    if (input.canceled) return openFridge(player, block);
+    if (input.canceled) return openFridge(player, block, title);
     const id = String(input.formValues?.[0] ?? "").trim();
     const qty = Number(String(input.formValues?.[1] ?? "").trim());
     if (!/^[a-z0-9_.-]+:[a-z0-9_./-]+$/i.test(id) || !Number.isInteger(qty) || qty < 1 || qty > 64) {
       tell(player, "Ungültige Item-ID oder Anzahl. Erlaubt sind 1 bis 64.");
-      return openFridge(player, block);
+      return openFridge(player, block, title);
     }
     try {
       new ItemStack(id, 1);
       const nextData = { ...data, items: { ...(data.items ?? {}) } };
       nextData.items[id] = (nextData.items[id] ?? 0) + qty;
       if (JSON.stringify(nextData).length > 30000) {
-        tell(player, "Der Kühlschrank ist voll.");
-        return openFridge(player, block);
+        tell(player, "Der Möbelspeicher ist voll.");
+        return openFridge(player, block, title);
       }
       if (!removeItems(player, id, qty)) {
         tell(player, "Du hast nicht genug davon im Inventar.");
-        return openFridge(player, block);
+        return openFridge(player, block, title);
       }
       writeFurnitureData(block, nextData);
       tell(player, qty + "× " + id + " eingelagert.");
     } catch {
       tell(player, "Diese Item-ID ist in deiner Bedrock-Version nicht verfügbar.");
     }
-    return openFridge(player, block);
+    return openFridge(player, block, title);
   }
   if (entries.length === 0) {
-    tell(player, "Der Kühlschrank ist leer.");
-    return openFridge(player, block);
+    tell(player, "Der Speicher ist leer.");
+    return openFridge(player, block, title);
   }
   const choose = new ActionFormData().title("§l§eENTNEHMEN").body("§7Wähle einen Gegenstand.");
   for (const [id, qty] of entries) choose.button(id + "\n§7Gelagert: " + qty);
   choose.button("§7Zurück");
   const selected = await choose.show(player);
-  if (selected.canceled || selected.selection === entries.length) return openFridge(player, block);
+  if (selected.canceled || selected.selection === entries.length) return openFridge(player, block, title);
   const [id, available] = entries[selected.selection] ?? [];
-  if (!id) return openFridge(player, block);
+  if (!id) return openFridge(player, block, title);
   const amountForm = new ModalFormData().title("Entnehmen")
     .textField("Anzahl (maximal " + available + ")", "Anzahl", { defaultValue: String(Math.min(available, 1)) });
   const amountResult = await amountForm.show(player);
-  if (amountResult.canceled) return openFridge(player, block);
+  if (amountResult.canceled) return openFridge(player, block, title);
   const qty = Number(String(amountResult.formValues?.[0] ?? "").trim());
   if (!Number.isInteger(qty) || qty < 1 || qty > available) {
     tell(player, "Ungültige Anzahl.");
-    return openFridge(player, block);
+    return openFridge(player, block, title);
   }
   if (!canFitItem(player, id, qty)) {
     tell(player, "Dein Inventar hat nicht genug Platz.");
-    return openFridge(player, block);
+    return openFridge(player, block, title);
   }
   const nextData = { ...data, items: { ...(data.items ?? {}) } };
   nextData.items[id] -= qty;
@@ -1052,10 +1052,10 @@ async function openFridge(player, block, title = "KÜHLSCHRANK") {
   if (!addItem(player, id, qty)) {
     writeFurnitureData(block, data);
     tell(player, "Die Entnahme wurde abgebrochen; dein Inventar hat nicht genug Platz.");
-    return openFridge(player, block);
+    return openFridge(player, block, title);
   }
   tell(player, qty + "× " + id + " entnommen.");
-  return openFridge(player, block);
+  return openFridge(player, block, title);
 }
 async function mountFurniture(player, block, entityId) {
   const location = { x: block.x + 0.5, y: block.y, z: block.z + 0.5 };
