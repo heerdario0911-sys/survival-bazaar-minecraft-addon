@@ -781,13 +781,18 @@ async function checkoutBuyBasket(player, returnTo) {
     tell(player, "Nicht genug gemeinsamer Inventarplatz für deinen gesamten Warenkorb. Bitte ändere die Mengen.");
     return openBuyBasket(player, returnTo);
   }
-  for (const item of entries) {
-    if (!addItem(player, item.id, item.qty)) {
-      tell(player, "Kauf abgebrochen: " + item.name + " konnte nicht hinzugefügt werden.");
-      return openBuyBasket(player, returnTo);
+  const added = [];
+  try {
+    for (const item of entries) {
+      if (!addItem(player, item.id, item.qty)) throw new Error(item.name + " konnte nicht hinzugefügt werden.");
+      added.push(item);
     }
+    setBalance(player.id, balance(player) - total);
+  } catch (error) {
+    for (const item of added.reverse()) removeItems(player, item.id, item.qty);
+    tell(player, "Kauf abgebrochen. Alle bereits hinzugefügten Waren wurden zurückgesetzt: " + (error?.message ?? String(error)));
+    return openBuyBasket(player, returnTo);
   }
-  setBalance(player.id, balance(player) - total);
   cart.clear();
   tell(player, "Einkauf abgeschlossen: " + entries.length + " verschiedene Items für " + formatMoney(total) + ".");
   return returnTo(player);
@@ -1207,11 +1212,25 @@ async function openMarket(player) {
     const idx = current.findIndex(x => x.id === offer.id);
     if (idx < 0) { tell(player, "Dieses Angebot ist nicht mehr verfügbar."); return openMarket(player); }
     if (balance(player) < finalPrice) { tell(player, "Du hast nicht genug Guthaben."); return openMarket(player); }
+    if (!canFitItem(player, offer.itemId, offer.amount)) { tell(player, "Dein Inventar ist voll."); return openMarket(player); }
+    const buyerBalanceBefore = balance(player);
+    const sellerBalanceBefore = accounts()[offer.sellerId] ?? 0;
     if (!addItem(player, offer.itemId, offer.amount)) { tell(player, "Dein Inventar ist voll."); return openMarket(player); }
-    setBalance(player.id, balance(player) - finalPrice);
-    setBalance(offer.sellerId, (accounts()[offer.sellerId] ?? 0) + finalPrice);
     current.splice(idx, 1);
-    writeJson(LISTINGS_KEY, current);
+    try {
+      setBalance(player.id, buyerBalanceBefore - finalPrice);
+      setBalance(offer.sellerId, sellerBalanceBefore + finalPrice);
+      writeJson(LISTINGS_KEY, current);
+    } catch (error) {
+      removeItems(player, offer.itemId, offer.amount);
+      try {
+        setBalance(player.id, buyerBalanceBefore);
+        setBalance(offer.sellerId, sellerBalanceBefore);
+        writeJson(LISTINGS_KEY, listings());
+      } catch {}
+      tell(player, "Kauf konnte nicht sicher gespeichert werden. Ware und Guthaben wurden zurückgesetzt.");
+      return openMarket(player);
+    }
     tell(player, "Angebot gekauft. " + formatMoney(finalPrice) + " wurden überwiesen.");
     return openMarket(player);
   }
