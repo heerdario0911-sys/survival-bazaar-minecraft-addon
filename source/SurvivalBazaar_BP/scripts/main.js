@@ -13,6 +13,33 @@ const parseMoneyToCents = value => {
 const ACCOUNTS_KEY = "bazaar:accounts";
 const LISTINGS_KEY = "bazaar:listings";
 const PRICES_KEY = "bazaar:prices";
+
+// Texturpfade für Item-Schaltflächen im Kauf-, Verkaufs- und Spielermarkt.
+const CUSTOM_ITEM_ICONS = {
+  "survivalbazaar:modern_sofa": "textures/blocks/sofa",
+  "survivalbazaar:flat_tv": "textures/blocks/tv",
+  "survivalbazaar:wall_mirror": "textures/blocks/mirror",
+  "survivalbazaar:coffee_table": "textures/blocks/table",
+  "survivalbazaar:modern_chair": "textures/blocks/chair",
+  "survivalbazaar:double_bed": "textures/blocks/bed",
+  "survivalbazaar:fridge": "textures/blocks/fridge",
+  "survivalbazaar:dining_table": "textures/blocks/table",
+  "survivalbazaar:wardrobe": "textures/blocks/fridge",
+  "survivalbazaar:bookshelf": "textures/blocks/table",
+  "survivalbazaar:floor_lamp": "textures/blocks/tv",
+  "survivalbazaar:armchair": "textures/blocks/chair"
+};
+const BLOCK_ITEM_IDS = new Set((
+  "dirt coarse_dirt rooted_dirt grass_block podzol mycelium mud clay sand red_sand gravel snow_block ice packed_ice blue_ice stone cobblestone mossy_cobblestone granite diorite andesite deepslate cobbled_deepslate tuff calcite dripstone_block bricks stone_bricks quartz_block obsidian crying_obsidian oak_log spruce_log birch_log jungle_log acacia_log dark_oak_log mangrove_log cherry_log bamboo_block crimson_stem warped_stem hay_block moss_block bone_block glass glass_pane glowstone sea_lantern lantern torch bookshelf flower_pot terracotta white_wool white_concrete white_concrete_powder wool concrete concrete_powder stained_glass stained_glass_pane carpet bed banner shulker_box candle stairs slab fence fence_gate door trapdoor button pressure_plate sign bamboo_mosaic stone_stairs stone_slab cobblestone_stairs cobblestone_slab stone_brick_stairs stone_brick_slab brick_stairs brick_slab quartz_stairs quartz_slab polished_andesite_stairs polished_andesite_slab polished_diorite_stairs polished_diorite_slab polished_granite_stairs polished_granite_slab iron_door iron_trapdoor ladder scaffolding chain iron_bars"
+).split(/\s+/));
+function itemIconPath(itemId) {
+  if (CUSTOM_ITEM_ICONS[itemId]) return CUSTOM_ITEM_ICONS[itemId];
+  const path = String(itemId).replace(/^minecraft:/, "");
+  const colored = /^(white|orange|magenta|light_blue|yellow|lime|pink|gray|light_gray|cyan|purple|blue|brown|green|red|black)_/.test(path);
+  const woodPart = /^(oak|spruce|birch|jungle|acacia|dark_oak|mangrove|cherry|bamboo|crimson|warped)_/.test(path);
+  return "textures/" + (BLOCK_ITEM_IDS.has(path) || colored || woodPart ? "blocks/" : "items/") + path;
+}
+
 const SHOP = [
   { id: "minecraft:bread", name: "Brot", buy: 8, sell: 3 },
   { id: "minecraft:torch", name: "Fackel", buy: 2, sell: 1 },
@@ -631,7 +658,7 @@ async function showBuySearchResults(player, query, page) {
   const form = new ActionFormData().title("§l§bSUCHERGEBNISSE")
     .body("§7Suchbegriff: §f" + query + "\n§7Treffer: §f" + matches.length + " §8| §7Seite " + (page + 1) + "/" + Math.ceil(matches.length / pageSize) + "\n§7Warenkorb: §e" + getBuyCart(player).size + " Items – " + formatMoney(cartTotal(getBuyCart(player))));
   for (const item of shown) {
-    form.button(item.name + "\n§a" + formatMoney(getPriceCents(item.id, "buy", item.basePrice)) + " §8| §7" + item.category);
+    form.button(item.name + "\n§a" + formatMoney(getPriceCents(item.id, "buy", item.basePrice)) + " §8| §7" + item.category, itemIconPath(item.id));
   }
   if (start + pageSize < matches.length) form.button("§eWeitere Ergebnisse");
   form.button("§6🛒 Warenkorb öffnen");
@@ -674,7 +701,7 @@ async function openBuyItems(player, category, group) {
     .body("§7Wähle einen Gegenstand, um eine Menge hinzuzufügen.\n§7Warenkorb: §e" + cart.size + " Items – " + formatMoney(cartTotal(cart)));
   for (const [id, name, basePrice] of group.items) {
     const inCart = cart.get(id)?.qty ?? 0;
-    form.button(name + "\n§a" + formatMoney(getPriceCents(id, "buy", basePrice)) + " / Stück" + (inCart ? " §e| Im Korb: " + inCart : ""));
+    form.button(name + "\n§a" + formatMoney(getPriceCents(id, "buy", basePrice)) + " / Stück" + (inCart ? " §e| Im Korb: " + inCart : ""), itemIconPath(id));
   }
   form.button("§6🛒 Warenkorb öffnen");
   form.button("§7Zurück");
@@ -713,45 +740,42 @@ async function openSellSubcategories(player, category) {
 }
 
 async function openSellItems(player, category, group) {
-  const form = new ModalFormData().title("§l§c" + group.name.toUpperCase());
-  const ownedAmounts = group.items.map(([id]) => countItem(player, id));
-  for (let i = 0; i < group.items.length; i++) {
-    const [id, name, basePrice] = group.items[i];
-    form.textField(name + " – " + formatMoney(getPriceCents(id, "sell", basePrice)) + " / Stück (Besitz: " + ownedAmounts[i] + ")", "Anzahl", { defaultValue: "0" });
+  const form = new ActionFormData().title("§l§c" + group.name.toUpperCase())
+    .body("§7Wähle einen Gegenstand zum Verkaufen.");
+  for (const [id, name, basePrice] of group.items) {
+    const owned = countItem(player, id);
+    form.button(name + "\n§c" + formatMoney(getPriceCents(id, "sell", basePrice)) + " / Stück §8| §7Besitz: " + owned, itemIconPath(id));
   }
+  form.button("§7Zurück");
   const res = await form.show(player);
-  if (res.canceled) return openSellSubcategories(player, category);
-  const requested = [];
-  for (let i = 0; i < group.items.length; i++) {
-    const [id, name, basePrice] = group.items[i];
-    const raw = String(res.formValues?.[i] ?? "0").trim();
-    const qty = raw === "" ? 0 : Number(raw);
-    if (!Number.isInteger(qty) || qty < 0 || qty > ownedAmounts[i]) {
-      tell(player, "Ungültige Verkaufsmenge für " + name + ". Du besitzt " + ownedAmounts[i] + ".");
-      return openSellItems(player, category, group);
-    }
-    if (qty > 0) requested.push({ id, name, qty, basePrice });
+  if (res.canceled || res.selection === group.items.length) return openSellSubcategories(player, category);
+  const entry = group.items[res.selection];
+  if (!entry) return openSellItems(player, category, group);
+  const [id, name, basePrice] = entry;
+  const owned = countItem(player, id);
+  if (owned < 1) {
+    tell(player, "Du besitzt keinen Gegenstand: " + name + ".");
+    return openSellItems(player, category, group);
   }
-  if (!requested.length) { tell(player, "Du hast keine Verkaufsmenge eingegeben."); return openSellItems(player, category, group); }
-  for (const item of requested) {
-    if (countItem(player, item.id) < item.qty) {
-      tell(player, "Nicht genügend " + item.name + " im Inventar.");
-      return openSellItems(player, category, group);
-    }
+  const modal = new ModalFormData().title("§l§c" + name)
+    .textField("Verkaufsmenge (Besitz: " + owned + ") – " + formatMoney(getPriceCents(id, "sell", basePrice)) + " pro Stück", "Anzahl", { defaultValue: String(owned) });
+  const amountResult = await modal.show(player);
+  if (amountResult.canceled) return openSellItems(player, category, group);
+  const raw = String(amountResult.formValues?.[0] ?? "0").trim();
+  const qty = raw === "" ? 0 : Number(raw);
+  if (!Number.isInteger(qty) || qty < 1 || qty > owned) {
+    tell(player, "Ungültige Verkaufsmenge. Du besitzt " + owned + " " + name + ".");
+    return openSellItems(player, category, group);
   }
-  let total = 0;
-  for (const item of requested) {
-    if (!removeItems(player, item.id, item.qty)) {
-      tell(player, "Verkauf abgebrochen: " + item.name + " konnte nicht entnommen werden.");
-      return openSellItems(player, category, group);
-    }
-    total += getPriceCents(item.id, "sell", item.basePrice) * item.qty;
+  if (countItem(player, id) < qty || !removeItems(player, id, qty)) {
+    tell(player, "Nicht genügend " + name + " im Inventar.");
+    return openSellItems(player, category, group);
   }
+  const total = getPriceCents(id, "sell", basePrice) * qty;
   setBalance(player.id, balance(player) + total);
-  tell(player, "Verkauf abgeschlossen: " + requested.length + " verschiedene Gegenstände für " + formatMoney(total) + ".");
+  tell(player, "Verkauf abgeschlossen: " + qty + "× " + name + " für " + formatMoney(total) + ".");
   return openSellItems(player, category, group);
 }
-
 
 async function openAdminMenu(player) {
   const form = new ActionFormData().title("§l§cBAZAAR-ADMIN")
@@ -855,7 +879,7 @@ async function openAdminSellGroups(player, category) {
 async function openAdminSellItems(player, category, group) {
   const form = new ActionFormData().title("§l§c" + group.name.toUpperCase())
     .body("§7Wähle den Gegenstand, dessen Verkaufspreis du ändern möchtest.");
-  for (const [id, name, basePrice] of group.items) form.button(name + "\n§c" + formatMoney(getPriceCents(id, "sell", basePrice)));
+  for (const [id, name, basePrice] of group.items) form.button(name + "\n§c" + formatMoney(getPriceCents(id, "sell", basePrice)), itemIconPath(id));
   form.button("§7Zurück");
   const res = await form.show(player);
   if (res.canceled || res.selection === group.items.length) return openAdminSellGroups(player, category);
@@ -869,7 +893,7 @@ async function openMarket(player) {
   const offers = listings().filter(x => x && x.id && x.sellerId !== player.id);
   const form = new ActionFormData().title("§l§bSPIELER-MARKTPLATZ")
     .body("§7Angebote anderer Spieler. Dein Guthaben: §6" + formatMoney(balance(player)));
-  for (const offer of offers.slice(0, 25)) form.button(offer.itemName + " ×" + offer.amount + "\n§6" + formatMoney(offer.price) + " §8| §7von " + offer.sellerName);
+  for (const offer of offers.slice(0, 25)) form.button(offer.itemName + " ×" + offer.amount + "\n§6" + formatMoney(offer.price) + " §8| §7von " + offer.sellerName, itemIconPath(offer.itemId));
   form.button("§aEigenes Item anbieten");
   form.button("Zurück");
   const res = await form.show(player);
