@@ -42,7 +42,7 @@ jobs:
               assert texture in atlas["texture_data"], f"Fehlende Texturzuordnung: {path} -> {texture}"
           for path in (rp / "textures").rglob("*.png"):
               data = path.read_bytes()
-              assert data.startswith(b"\\x89PNG\\r\\n\\x1a\\n"), f"Ungültige PNG: {path}"
+              assert data.startswith(bytes([137,80,78,71,13,10,26,10])), f"Ungültige PNG: {path}"
               w, h = struct.unpack(">II", data[16:24])
               assert w > 1 and h > 1 and len(data) > 200, f"Platzhalter-/leere Textur: {path}"
           print("JSON, 3D-Modelle, Texturzuordnungen und PNG-Dateien geprüft.")
