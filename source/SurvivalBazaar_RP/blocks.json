@@ -28,23 +28,47 @@
     "sound": "stone"
   },
   "survivalbazaar:dining_table": {
-    "textures": "table",
+    "textures": "dining_table",
     "sound": "stone"
   },
   "survivalbazaar:wardrobe": {
-    "textures": "fridge",
+    "textures": "wardrobe",
     "sound": "stone"
   },
   "survivalbazaar:bookshelf": {
-    "textures": "table",
+    "textures": "bookshelf",
     "sound": "stone"
   },
   "survivalbazaar:floor_lamp": {
-    "textures": "tv",
+    "textures": "floor_lamp",
     "sound": "stone"
   },
   "survivalbazaar:armchair": {
-    "textures": "chair",
+    "textures": "armchair",
+    "sound": "stone"
+  },
+  "survivalbazaar:bar_counter": {
+    "textures": "bar_counter",
+    "sound": "stone"
+  },
+  "survivalbazaar:bar_stool": {
+    "textures": "bar_stool",
+    "sound": "stone"
+  },
+  "survivalbazaar:potted_plant": {
+    "textures": "potted_plant",
+    "sound": "stone"
+  },
+  "survivalbazaar:grandfather_clock": {
+    "textures": "grandfather_clock",
+    "sound": "stone"
+  },
+  "survivalbazaar:hanging_guitar": {
+    "textures": "hanging_guitar",
+    "sound": "stone"
+  },
+  "survivalbazaar:wall_shelf": {
+    "textures": "wall_shelf",
     "sound": "stone"
   }
 }
