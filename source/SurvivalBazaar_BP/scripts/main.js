@@ -1004,13 +1004,17 @@ async function openFridge(player, block) {
     }
     try {
       new ItemStack(id, 1);
+      const nextData = { ...data, items: { ...(data.items ?? {}) } };
+      nextData.items[id] = (nextData.items[id] ?? 0) + qty;
+      if (JSON.stringify(nextData).length > 30000) {
+        tell(player, "Der Kühlschrank ist voll.");
+        return openFridge(player, block);
+      }
       if (!removeItems(player, id, qty)) {
         tell(player, "Du hast nicht genug davon im Inventar.");
         return openFridge(player, block);
       }
-      data.items ??= {};
-      data.items[id] = (data.items[id] ?? 0) + qty;
-      writeFurnitureData(block, data);
+      writeFurnitureData(block, nextData);
       tell(player, qty + "× " + id + " eingelagert.");
     } catch {
       tell(player, "Diese Item-ID ist in deiner Bedrock-Version nicht verfügbar.");
@@ -1037,20 +1041,59 @@ async function openFridge(player, block) {
     tell(player, "Ungültige Anzahl.");
     return openFridge(player, block);
   }
-  if (!addItem(player, id, qty)) {
+  if (!canFitItem(player, id, qty)) {
     tell(player, "Dein Inventar hat nicht genug Platz.");
     return openFridge(player, block);
   }
-  data.items[id] -= qty;
-  if (data.items[id] <= 0) delete data.items[id];
-  writeFurnitureData(block, data);
+  const nextData = { ...data, items: { ...(data.items ?? {}) } };
+  nextData.items[id] -= qty;
+  if (nextData.items[id] <= 0) delete nextData.items[id];
+  writeFurnitureData(block, nextData);
+  if (!addItem(player, id, qty)) {
+    writeFurnitureData(block, data);
+    tell(player, "Die Entnahme wurde abgebrochen; dein Inventar hat nicht genug Platz.");
+    return openFridge(player, block);
+  }
   tell(player, qty + "× " + id + " entnommen.");
   return openFridge(player, block);
+}
+async function mountFurniture(player, block, entityId) {
+  const location = { x: block.x + 0.5, y: block.y, z: block.z + 0.5 };
+  const nearby = block.dimension.getEntities({ type: entityId, location, maxDistance: 1.25 });
+  let seat = nearby[0];
+  if (!seat) seat = block.dimension.spawnEntity(entityId, location);
+  const rideable = seat.getComponent("minecraft:rideable");
+  if (!rideable) {
+    tell(player, "Der Sitz konnte nicht initialisiert werden.");
+    return;
+  }
+  if (rideable.getRiders().length >= rideable.seatCount) {
+    tell(player, "Dieser Sitzplatz ist bereits belegt.");
+    return;
+  }
+  if (!rideable.addRider(player)) tell(player, "Du konntest dich nicht auf das Möbel setzen.");
 }
 async function interactWithFurniture(player, block) {
   const id = block.typeId;
   const data = readFurnitureData(block);
   if (id === "survivalbazaar:fridge") return openFridge(player, block);
+  const seats = {
+    "survivalbazaar:modern_sofa": "survivalbazaar:modern_sofa_display",
+    "survivalbazaar:modern_chair": "survivalbazaar:modern_chair_display",
+    "survivalbazaar:armchair": "survivalbazaar:armchair_display",
+    "survivalbazaar:bar_stool": "survivalbazaar:bar_stool_display"
+  };
+  if (seats[id]) return mountFurniture(player, block, seats[id]);
+  if (id === "survivalbazaar:double_bed") {
+    const time = world.getTimeOfDay();
+    if (time >= 12500 || time < 500) {
+      world.setTimeOfDay(0);
+      tell(player, "Du hast dich ausgeruht. Die Nacht wurde übersprungen.");
+    } else {
+      tell(player, "Du kannst dich erst nachts ausruhen.");
+    }
+    return;
+  }
   if (id === "survivalbazaar:flat_tv" || id === "survivalbazaar:floor_lamp") {
     data.on = !data.on;
     writeFurnitureData(block, data);
@@ -1070,16 +1113,12 @@ async function interactWithFurniture(player, block) {
   const name = labels[id] ?? "Möbelstück";
   const form = new ActionFormData().title("§l§6" + name.toUpperCase())
     .body("§7Du hast " + name + " benutzt.\n§8Interaktionsmenü des Survival Bazaar.");
-  if (id === "survivalbazaar:double_bed") form.button("§aRuheplatz verwenden");
-  else if (id === "survivalbazaar:modern_sofa" || id === "survivalbazaar:modern_chair" || id === "survivalbazaar:armchair" || id === "survivalbazaar:bar_stool") form.button("§aSitzplatz auswählen");
-  else if (id === "survivalbazaar:wardrobe") form.button("§aKleiderschrank öffnen");
+  if (id === "survivalbazaar:wardrobe") form.button("§aKleiderschrank öffnen");
   else form.button("§aBenutzen");
   form.button("§7Schließen");
   const result = await form.show(player);
   if (result.canceled || result.selection !== 0) return;
-  if (id === "survivalbazaar:double_bed") tell(player, "Ein echtes Minecraft-Schlafen ist bei diesem Custom-Block nicht eingebaut; der Ruheplatz ist vorgemerkt.");
-  else if (id === "survivalbazaar:modern_sofa" || id === "survivalbazaar:modern_chair" || id === "survivalbazaar:armchair" || id === "survivalbazaar:bar_stool") tell(player, "Für echtes Sitzen braucht das Möbel einen eigenen unsichtbaren Rideable-Sitz. Dieser wird nicht als fertige Sitzfunktion ausgegeben.");
-  else if (id === "survivalbazaar:wardrobe") tell(player, "Der Kleiderschrank wurde geöffnet. Die Ausrüstungsverwaltung wird in einer separaten Funktion ergänzt.");
+  if (id === "survivalbazaar:wardrobe") tell(player, "Der Kleiderschrank wurde geöffnet. Die Ausrüstungsverwaltung wird in einer separaten Funktion ergänzt.");
   else tell(player, name + " benutzt.");
 }
 world.afterEvents.playerInteractWithBlock.subscribe(event => {
