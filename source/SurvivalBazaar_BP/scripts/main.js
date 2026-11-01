@@ -1,4 +1,4 @@
-import { world, system, ItemStack, ItemTypes, CommandPermissionLevel, CustomCommandStatus, Player } from "@minecraft/server";
+import { world, system, ItemStack, ItemTypes, CommandPermissionLevel, CustomCommandStatus, Player, PlayerPermissionLevel } from "@minecraft/server";
 import { ActionFormData, ModalFormData, MessageFormData } from "@minecraft/server-ui";
 
 const CURRENCY = "€";
@@ -1012,13 +1012,22 @@ system.beforeEvents.startup.subscribe(({ customCommandRegistry }) => {
     {
       name: "survivalbazaar:admin",
       description: "Öffnet die geschützte Admin-Verwaltung des Survival Bazaar.",
-      permissionLevel: CommandPermissionLevel.Admin,
+      // Permission is checked below against the actual player role. This avoids
+      // Bedrock's command parser rejecting valid Xbox operators before callback.
+      permissionLevel: CommandPermissionLevel.Any,
       cheatsRequired: false
     },
     (origin) => {
       const player = origin.initiator ?? origin.sourceEntity;
       if (!(player instanceof Player)) {
         return { status: CustomCommandStatus.Failure, message: "Dieser Befehl kann nur von Spielern verwendet werden." };
+      }
+      try {
+        if (player.playerPermissionLevel < PlayerPermissionLevel.Operator) {
+          return { status: CustomCommandStatus.Failure, message: "Nur Operatoren dürfen /admin verwenden. Stelle deine Spielerberechtigung auf Operator." };
+        }
+      } catch (error) {
+        return { status: CustomCommandStatus.Failure, message: "Operator-Berechtigung konnte nicht geprüft werden." };
       }
       system.run(() => {
         openAdminMenu(player).catch((error) => {
