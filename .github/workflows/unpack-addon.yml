@@ -5,6 +5,7 @@ on:
   push:
     paths:
       - '*.mcaddon'
+      - '.github/workflows/unpack-addon.yml'
 
 permissions:
   contents: write
@@ -22,7 +23,7 @@ jobs:
           test -f "$FILE"
           mkdir -p source
           unzip -o "$FILE" -d source
-          find source -type f -maxdepth 6 -print
+          find source -maxdepth 6 -type f -print
       - name: Entpackte Quellen speichern
         run: |
           git config user.name "github-actions[bot]"
