@@ -1,8 +1,7 @@
 name: Inspect Survival Bazaar archives
 on:
   push:
-    paths:
-      - '.github/workflows/inspect-survival-bazaar.yml'
+    branches: [main]
   workflow_dispatch:
 jobs:
   package:
