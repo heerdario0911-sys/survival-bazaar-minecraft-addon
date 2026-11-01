@@ -93,8 +93,17 @@ jobs:
               texture = desc.get("textures", {}).get("default")
               assert texture and (rp / (texture + ".png")).is_file(), f"Fehlende Entity-Textur: {path} -> {texture}"
           assert set(behavior_entities) == set(client_entities), "Behavior-/Client-Entity-IDs stimmen nicht überein"
-          for identifier, entity in behavior_entities.items():
-              assert "minecraft:rideable" in entity.get("components", {}), f"Display-Entity nicht reitbar: {identifier}"
+          seat_entities = {
+              "survivalbazaar:modern_sofa_display",
+              "survivalbazaar:modern_chair_display",
+              "survivalbazaar:armchair_display",
+              "survivalbazaar:bar_stool_display",
+          }
+          for identifier in seat_entities:
+              assert identifier in behavior_entities, f"Fehlende Sitz-Entity: {identifier}"
+              rideable = behavior_entities[identifier].get("components", {}).get("minecraft:rideable")
+              assert rideable and rideable.get("seat_count", 0) > 0, f"Sitz-Entity nicht reitbar: {identifier}"
+              assert rideable.get("seats"), f"Sitzposition fehlt: {identifier}"
 
           # Die im Shop gelisteten eigenen Möbel müssen als Blöcke existieren.
           import re
