@@ -454,9 +454,9 @@ const CUSTOM_ITEM_ICONS = {
  "survivalbazaar:modern_sofa":"textures/blocks/sofa","survivalbazaar:flat_tv":"textures/blocks/tv",
  "survivalbazaar:wall_mirror":"textures/blocks/mirror","survivalbazaar:coffee_table":"textures/blocks/table",
  "survivalbazaar:modern_chair":"textures/blocks/chair","survivalbazaar:double_bed":"textures/blocks/bed",
- "survivalbazaar:fridge":"textures/blocks/fridge","survivalbazaar:dining_table":"textures/blocks/table",
- "survivalbazaar:wardrobe":"textures/blocks/fridge","survivalbazaar:bookshelf":"textures/blocks/table",
- "survivalbazaar:floor_lamp":"textures/blocks/tv","survivalbazaar:armchair":"textures/blocks/chair",
+ "survivalbazaar:fridge":"textures/blocks/fridge","survivalbazaar:dining_table":"textures/blocks/dining_table",
+ "survivalbazaar:wardrobe":"textures/blocks/wardrobe","survivalbazaar:bookshelf":"textures/blocks/bookshelf",
+ "survivalbazaar:floor_lamp":"textures/blocks/floor_lamp","survivalbazaar:armchair":"textures/blocks/armchair",
  "survivalbazaar:bar_counter":"textures/blocks/bar_counter","survivalbazaar:bar_stool":"textures/blocks/bar_stool",
  "survivalbazaar:grandfather_clock":"textures/blocks/grandfather_clock","survivalbazaar:hanging_guitar":"textures/blocks/hanging_guitar",
  "survivalbazaar:potted_plant":"textures/blocks/potted_plant","survivalbazaar:wall_shelf":"textures/blocks/wall_shelf","minecraft:mob_spawner":"textures/blocks/mob_spawner"
