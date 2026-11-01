@@ -991,6 +991,21 @@ system.beforeEvents.startup.subscribe(({ customCommandRegistry }) => {
 
   customCommandRegistry.registerCommand(
     {
+      name: "sba:admin",
+      description: "Öffnet die geschützte Admin-Verwaltung des Survival Bazaar.",
+      permissionLevel: CommandPermissionLevel.Admin,
+      cheatsRequired: false
+    },
+    (origin) => {
+      const player = origin.sourceEntity;
+      if (!(player instanceof Player)) return { status: CustomCommandStatus.Failure, message: "Nur Spieler können diesen Befehl verwenden." };
+      system.run(() => openAdminMenu(player).catch(() => tell(player, "Admin-Menü konnte nicht geöffnet werden.")));
+      return { status: CustomCommandStatus.Success };
+    }
+  );
+
+  customCommandRegistry.registerCommand(
+    {
       name: "survivalbazaar:admin",
       description: "Öffnet die geschützte Admin-Verwaltung des Survival Bazaar.",
       permissionLevel: CommandPermissionLevel.Admin,
