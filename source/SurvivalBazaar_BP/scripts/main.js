@@ -537,7 +537,7 @@ async function openBuyBasket(player, returnTo = openBuyShop) {
     .body(entries.length
       ? "§7Dein Warenkorb:\n" + entries.map((item, i) => "§f" + (i + 1) + ". " + item.qty + "× " + item.name + " – " + formatMoney(getPriceCents(item.id, "buy", item.basePrice) * item.qty)).join("\n") + "\n\n§7Gesamt: §6" + formatMoney(cartTotal(cart))
       : "§7Dein Warenkorb ist leer.");
-  for (const item of entries) form.button("§e" + item.name + "\n§7" + item.qty + " Stück – ändern / entfernen");
+  for (const item of entries) form.button("§e" + item.name + "\n§7" + item.qty + " Stück – ändern / entfernen", itemIconPath(item.id));
   form.button("§aJetzt kaufen");
   form.button("§cWarenkorb abbrechen/leeren");
   form.button("§7Weiter einkaufen");
@@ -890,7 +890,7 @@ async function openAdminSellGroups(player, category) {
 async function openAdminSellItems(player, category, group) {
   const form = new ActionFormData().title("§l§c" + group.name.toUpperCase())
     .body("§7Wähle den Gegenstand, dessen Verkaufspreis du ändern möchtest.");
-  for (const [id, name, basePrice] of group.items) form.button(name + "\n§c" + formatMoney(getPriceCents(id, "sell", basePrice)));
+  for (const [id, name, basePrice] of group.items) form.button(name + "\n§c" + formatMoney(getPriceCents(id, "sell", basePrice)), itemIconPath(id));
   form.button("§7Zurück");
   const res = await form.show(player);
   if (res.canceled || res.selection === group.items.length) return openAdminSellGroups(player, category);
