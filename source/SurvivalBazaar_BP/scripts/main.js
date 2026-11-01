@@ -505,7 +505,7 @@ async function addToBuyCart(player, entry, qty, returnTo) {
 async function chooseBuyQuantity(player, entry, returnTo) {
   const [id, name] = entry;
   const modal = new ModalFormData().title("§l§a" + name)
-    .textField("Anzahl zum Warenkorb hinzufügen (1–64)", "z. B. 4", {});
+    .textField("Anzahl zum Warenkorb hinzufügen (1–64)", "z. B. 4", "1");
   const res = await modal.show(player);
   if (res.canceled) return returnTo();
   const qty = Number(String(res.formValues?.[0] ?? "").trim());
@@ -527,7 +527,7 @@ async function openBuyBasket(player, returnTo = openBuyShop) {
   if (res.selection < entries.length) {
     const item = entries[res.selection];
     const modal = new ModalFormData().title("§l§e" + item.name)
-      .textField("Neue Menge (0 = entfernen, maximal 64)", "Anzahl", {});
+      .textField("Neue Menge (0 = entfernen, maximal 64)", "Anzahl", String(item.qty));
     const edit = await modal.show(player);
     if (edit.canceled) return openBuyBasket(player, returnTo);
     const qty = Number(String(edit.formValues?.[0] ?? "").trim());
@@ -606,7 +606,7 @@ function allBuyEntries() {
 
 async function openBuySearch(player) {
   const modal = new ModalFormData().title("§l§bGEGENSTÄNDE SUCHEN")
-    .textField("Suchbegriff (Name oder ID)", "z. B. Diamant, Eiche, minecraft:stone", {});
+    .textField("Suchbegriff (Name oder ID)", "z. B. Diamant, Eiche, minecraft:stone", "");
   const res = await modal.show(player);
   if (res.canceled) return openBuyShop(player);
   const query = String(res.formValues?.[0] ?? "").trim().toLocaleLowerCase("de-DE");
@@ -717,7 +717,7 @@ async function openSellItems(player, category, group) {
   const ownedAmounts = group.items.map(([id]) => countItem(player, id));
   for (let i = 0; i < group.items.length; i++) {
     const [id, name, basePrice] = group.items[i];
-    form.textField(name + " – " + formatMoney(getPriceCents(id, "sell", basePrice)) + " / Stück (Besitz: " + ownedAmounts[i] + ")", "Anzahl", {});
+    form.textField(name + " – " + formatMoney(getPriceCents(id, "sell", basePrice)) + " / Stück (Besitz: " + ownedAmounts[i] + ")", "Anzahl", "0");
   }
   const res = await form.show(player);
   if (res.canceled) return openSellSubcategories(player, category);
@@ -767,7 +767,7 @@ async function openAdminMenu(player) {
 
 async function editPrice(player, itemId, itemName, side, currentCents, returnTo) {
   const modal = new ModalFormData().title("Preis bearbeiten")
-    .textField(itemName + " – " + (side === "buy" ? "Kaufpreis" : "Verkaufspreis") + " in Euro (€)", "Aktuell: " + formatMoney(currentCents) + " – neuen Preis eingeben", {});
+    .textField(itemName + " – " + (side === "buy" ? "Kaufpreis" : "Verkaufspreis") + " in Euro (€)", "z. B. 12,50 €", formatMoney(currentCents));
   const res = await modal.show(player);
   if (res.canceled) return returnTo();
   const cents = parseMoneyToCents(res.formValues?.[0]);
@@ -887,8 +887,8 @@ async function createListing(player) {
   const itemId = held.typeId;
   const itemName = held.nameTag || itemId.replace("minecraft:", "").replaceAll("_", " ");
   const modal = new ModalFormData().title("Item anbieten")
-    .textField("Anzahl (max. 64)", "z. B. 1", {})
-    .textField("Gesamtpreis in Euro (€)", "z. B. 12,50 €", {});
+    .textField("Anzahl (max. 64)", "z. B. 1", String(held.amount))
+    .textField("Gesamtpreis in Euro (€)", "z. B. 12,50 €", "10,00 €");
   const res = await modal.show(player);
   if (res.canceled) return openMarket(player);
   const amount = Math.floor(Number(res.formValues?.[0]));
@@ -944,7 +944,7 @@ system.beforeEvents.startup.subscribe(({ customCommandRegistry }) => {
     {
       name: "survivalbazaar:admin",
       description: "Öffnet die geschützte Admin-Verwaltung des Survival Bazaar.",
-      permissionLevel: CommandPermissionLevel.GameDirectors,
+      permissionLevel: CommandPermissionLevel.Admin,
       cheatsRequired: false
     },
     (origin) => {
@@ -952,7 +952,7 @@ system.beforeEvents.startup.subscribe(({ customCommandRegistry }) => {
       if (!(player instanceof Player)) {
         return { status: CustomCommandStatus.Failure, message: "Dieser Befehl kann nur von Spielern verwendet werden." };
       }
-      system.run(() => openAdminMenu(player).catch((error) => tell(player, "Admin-Menü-Fehler: " + (error?.message ?? String(error)))));
+      system.run(() => openAdminMenu(player).catch(() => tell(player, "Admin-Menü konnte nicht geöffnet werden.")));
       return { status: CustomCommandStatus.Success };
     }
   );
@@ -972,38 +972,4 @@ world.afterEvents.worldLoad.subscribe(() => {
   if (typeof world.getDynamicProperty(ACCOUNTS_KEY) !== "string") writeJson(ACCOUNTS_KEY, {});
   if (typeof world.getDynamicProperty(LISTINGS_KEY) !== "string") writeJson(LISTINGS_KEY, []);
   if (typeof world.getDynamicProperty(PRICES_KEY) !== "string") writeJson(PRICES_KEY, {});
-});
-
-
-// Möbelblöcke werden beim Platzieren in ihre Display-Entitäten umgewandelt.
-// Dadurch können Sitzmöbel und Betten die vorhandenen Rideable-Komponenten nutzen,
-// statt nur dekorative, nicht benutzbare Blöcke zu bleiben.
-const FURNITURE_DISPLAY_ENTITIES = {
-  "survivalbazaar:modern_sofa": "survivalbazaar:modern_sofa_display",
-  "survivalbazaar:double_bed": "survivalbazaar:double_bed_display",
-  "survivalbazaar:flat_tv": "survivalbazaar:flat_tv_display",
-  "survivalbazaar:fridge": "survivalbazaar:fridge_display",
-  "survivalbazaar:modern_chair": "survivalbazaar:modern_chair_display",
-  "survivalbazaar:bar_stool": "survivalbazaar:bar_stool_display",
-  "survivalbazaar:armchair": "survivalbazaar:armchair_display"
-};
-
-world.afterEvents.playerPlaceBlock.subscribe((event) => {
-  const block = event.block;
-  const displayId = FURNITURE_DISPLAY_ENTITIES[block.typeId];
-  if (!displayId) return;
-
-  const location = block.location;
-  try {
-    block.dimension.spawnEntity(displayId, {
-      x: location.x + 0.5,
-      y: location.y,
-      z: location.z + 0.5
-    });
-    // Der Block dient nur als platzierbarer Möbel-Gegenstand.
-    // Die sichtbare und interaktive Möbel-Instanz übernimmt danach die Entität.
-    block.setType("minecraft:air");
-  } catch (error) {
-    tell(event.player, "Möbel konnte nicht aufgestellt werden: " + (error?.message ?? String(error)));
-  }
 });
