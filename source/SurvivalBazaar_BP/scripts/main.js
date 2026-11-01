@@ -957,8 +957,8 @@ system.beforeEvents.startup.subscribe(({ customCommandRegistry }) => {
   customCommandRegistry.registerCommand(
     {
       name: "survivalbazaar:admin",
-      description: "Öffnet die geschützte Admin-Verwaltung des Survival Bazaar.",
-      permissionLevel: CommandPermissionLevel.Admin,
+      description: "Öffnet die nur für den Welt-Host verfügbare Admin-Verwaltung des Survival Bazaar.",
+      permissionLevel: CommandPermissionLevel.Host,
       cheatsRequired: false
     },
     (origin) => {
