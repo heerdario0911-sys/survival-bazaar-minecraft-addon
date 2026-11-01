@@ -1021,6 +1021,38 @@ system.beforeEvents.startup.subscribe(({ customCommandRegistry }) => {
     }
   );
 });
+
+const SEAT_BLOCKS = new Set([
+ "survivalbazaar:modern_sofa","survivalbazaar:modern_chair","survivalbazaar:armchair","survivalbazaar:bar_stool"
+]);
+const BED_BLOCKS = new Set(["survivalbazaar:double_bed"]);
+world.afterEvents.playerInteractWithBlock.subscribe((ev) => {
+ if (!ev.isFirstEvent) return;
+ const player=ev.player, block=ev.block, id=block.typeId;
+ if (!SEAT_BLOCKS.has(id) && !BED_BLOCKS.has(id)) return;
+ try {
+  if (player.isPassengerOfBlock) {
+   player.stopPassengerOfBlock();
+   tell(player,"Du bist aufgestanden.");
+   return;
+  }
+  const pos=block.location;
+  const rotation=player.getRotation().y;
+  if (BED_BLOCKS.has(id)) {
+   player.startPassengerOfBlock(pos,{x:0.5,y:0.65,z:0.5},rotation,90,"Laying");
+   player.setSpawnPoint({x:pos.x+0.5,y:pos.y+0.5,z:pos.z+0.5,dimension:player.dimension});
+   tell(player,"Du liegst im Bett. Dein persönlicher Rückkehrpunkt wurde hier gesetzt. Erneut benutzen, um aufzustehen.");
+  } else {
+   const y=id==="survivalbazaar:bar_stool"?0.58:0.43;
+   player.startPassengerOfBlock(pos,{x:0.5,y,z:0.5},rotation,90,"Riding");
+   tell(player,"Du sitzt jetzt. Erneut benutzen, um aufzustehen.");
+  }
+ } catch (error) {
+  tell(player,"Diese Sitz-/Liegefunktion wird von deiner aktuellen Minecraft-Laufzeit nicht unterstützt.");
+  console.warn("[SurvivalBazaar] Sitz-/Liegefunktion:",error);
+ }
+});
+
 world.afterEvents.playerSpawn.subscribe(ev => {
   if (ev.initialSpawn) {
     const p = ev.player;
