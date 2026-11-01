@@ -17,24 +17,24 @@ const DIRECT_TRADES_KEY = "bazaar:direct_trades";
 
 // Texturpfade für Item-Schaltflächen im Kauf-, Verkaufs- und Spielermarkt.
 const CUSTOM_ITEM_ICONS = {
-  "survivalbazaar:modern_sofa": "textures/blocks/sofa",
-  "survivalbazaar:grandfather_clock": "textures/blocks/grandfather_clock",
-  "survivalbazaar:hanging_guitar": "textures/blocks/hanging_guitar",
-  "survivalbazaar:bar_counter": "textures/blocks/bar_counter",
-  "survivalbazaar:bar_stool": "textures/blocks/bar_stool",
-  "survivalbazaar:wall_shelf": "textures/blocks/wall_shelf",
-  "survivalbazaar:potted_plant": "textures/blocks/potted_plant",
-  "survivalbazaar:flat_tv": "textures/blocks/tv",
-  "survivalbazaar:wall_mirror": "textures/blocks/mirror",
-  "survivalbazaar:coffee_table": "textures/blocks/table",
-  "survivalbazaar:modern_chair": "textures/blocks/chair",
-  "survivalbazaar:double_bed": "textures/blocks/bed",
-  "survivalbazaar:fridge": "textures/blocks/fridge",
-  "survivalbazaar:dining_table": "textures/blocks/table",
-  "survivalbazaar:wardrobe": "textures/blocks/fridge",
-  "survivalbazaar:bookshelf": "textures/blocks/table",
-  "survivalbazaar:floor_lamp": "textures/blocks/tv",
-  "survivalbazaar:armchair": "textures/blocks/chair"
+  "survivalbazaar:modern_sofa": "textures/blocks/sofa.png",
+  "survivalbazaar:grandfather_clock": "textures/blocks/grandfather_clock.png",
+  "survivalbazaar:hanging_guitar": "textures/blocks/hanging_guitar.png",
+  "survivalbazaar:bar_counter": "textures/blocks/bar_counter.png",
+  "survivalbazaar:bar_stool": "textures/blocks/bar_stool.png",
+  "survivalbazaar:wall_shelf": "textures/blocks/wall_shelf.png",
+  "survivalbazaar:potted_plant": "textures/blocks/potted_plant.png",
+  "survivalbazaar:flat_tv": "textures/blocks/tv.png",
+  "survivalbazaar:wall_mirror": "textures/blocks/mirror.png",
+  "survivalbazaar:coffee_table": "textures/blocks/table.png",
+  "survivalbazaar:modern_chair": "textures/blocks/chair.png",
+  "survivalbazaar:double_bed": "textures/blocks/bed.png",
+  "survivalbazaar:fridge": "textures/blocks/fridge.png",
+  "survivalbazaar:dining_table": "textures/blocks/table.png",
+  "survivalbazaar:wardrobe": "textures/blocks/fridge.png",
+  "survivalbazaar:bookshelf": "textures/blocks/table.png",
+  "survivalbazaar:floor_lamp": "textures/blocks/tv.png",
+  "survivalbazaar:armchair": "textures/blocks/chair.png"
 };
 const BLOCK_ITEM_IDS = new Set((
   "dirt coarse_dirt rooted_dirt grass_block podzol mycelium mud clay sand red_sand gravel snow_block ice packed_ice blue_ice stone cobblestone mossy_cobblestone granite diorite andesite deepslate cobbled_deepslate tuff calcite dripstone_block bricks stone_bricks quartz_block obsidian crying_obsidian oak_log spruce_log birch_log jungle_log acacia_log dark_oak_log mangrove_log cherry_log bamboo_block crimson_stem warped_stem hay_block moss_block bone_block glass glass_pane glowstone sea_lantern lantern torch bookshelf flower_pot terracotta white_wool white_concrete white_concrete_powder wool concrete concrete_powder stained_glass stained_glass_pane carpet bed banner shulker_box candle stairs slab fence fence_gate door trapdoor button pressure_plate sign bamboo_mosaic stone_stairs stone_slab cobblestone_stairs cobblestone_slab stone_brick_stairs stone_brick_slab brick_stairs brick_slab quartz_stairs quartz_slab polished_andesite_stairs polished_andesite_slab polished_diorite_stairs polished_diorite_slab polished_granite_stairs polished_granite_slab iron_door iron_trapdoor ladder scaffolding chain iron_bars"
