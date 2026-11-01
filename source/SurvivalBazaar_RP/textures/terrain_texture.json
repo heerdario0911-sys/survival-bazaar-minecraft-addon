@@ -4,12 +4,77 @@
   "padding": 8,
   "num_mip_levels": 4,
   "texture_data": {
-    "sofa": {"textures": "textures/blocks/sofa"},
-    "tv": {"textures": "textures/blocks/tv"},
-    "mirror": {"textures": "textures/blocks/mirror"},
-    "table": {"textures": "textures/blocks/table"},
-    "chair": {"textures": "textures/blocks/chair"},
-    "bed": {"textures": "textures/blocks/bed"},
-    "fridge": {"textures": "textures/blocks/fridge"}
+    "sofa": {
+      "textures": "textures/blocks/sofa"
+    },
+    "tv": {
+      "textures": "textures/blocks/tv"
+    },
+    "mirror": {
+      "textures": "textures/blocks/mirror"
+    },
+    "table": {
+      "textures": "textures/blocks/table"
+    },
+    "chair": {
+      "textures": "textures/blocks/chair"
+    },
+    "bed": {
+      "textures": "textures/blocks/bed"
+    },
+    "fridge": {
+      "textures": "textures/blocks/fridge"
+    },
+    "armchair": {
+      "textures": "textures/blocks/armchair"
+    },
+    "bar_counter": {
+      "textures": "textures/blocks/table"
+    },
+    "bar_stool": {
+      "textures": "textures/blocks/chair"
+    },
+    "bookshelf": {
+      "textures": "textures/blocks/bookshelf"
+    },
+    "coffee_table": {
+      "textures": "textures/blocks/table"
+    },
+    "dining_table": {
+      "textures": "textures/blocks/dining_table"
+    },
+    "double_bed": {
+      "textures": "textures/blocks/bed"
+    },
+    "flat_tv": {
+      "textures": "textures/blocks/tv"
+    },
+    "floor_lamp": {
+      "textures": "textures/blocks/floor_lamp"
+    },
+    "grandfather_clock": {
+      "textures": "textures/blocks/grandfather_clock"
+    },
+    "hanging_guitar": {
+      "textures": "textures/blocks/hanging_guitar"
+    },
+    "modern_chair": {
+      "textures": "textures/blocks/chair"
+    },
+    "modern_sofa": {
+      "textures": "textures/blocks/sofa"
+    },
+    "potted_plant": {
+      "textures": "textures/blocks/potted_plant"
+    },
+    "wall_mirror": {
+      "textures": "textures/blocks/mirror"
+    },
+    "wall_shelf": {
+      "textures": "textures/blocks/wall_shelf"
+    },
+    "wardrobe": {
+      "textures": "textures/blocks/wardrobe"
+    }
   }
 }
