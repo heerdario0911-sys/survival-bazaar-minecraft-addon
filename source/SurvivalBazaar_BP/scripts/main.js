@@ -752,16 +752,82 @@ async function purchaseBuyEntry(player, entry, returnTo) {
 }
 
 async function openSellCategories(player) {
-  const form = new ActionFormData().title("§l§cITEMS VERKAUFEN").body("§7Wähle eine Hauptkategorie.");
+  const form = new ActionFormData().title("§l§cITEMS VERKAUFEN")
+    .body("§7Wähle eine Kategorie oder suche direkt im gesamten Verkaufskatalog.")
+    .button("§b🔎 Gegenstände suchen\n§7Alle Verkaufsartikel durchsuchen");
   for (const category of SELL_CATEGORIES) form.button("§e" + category.name);
   form.button("§7Zurück");
   const res = await form.show(player);
-  if (res.canceled || res.selection === SELL_CATEGORIES.length) return openShop(player);
-  const category = SELL_CATEGORIES[res.selection];
+  if (res.canceled || res.selection === SELL_CATEGORIES.length + 1) return openShop(player);
+  if (res.selection === 0) return openSellSearch(player);
+  const category = SELL_CATEGORIES[res.selection - 1];
   if (category) return openSellSubcategories(player, category);
   return openSellCategories(player);
 }
 
+function allSellEntries() {
+  const entries = [];
+  const seen = new Set();
+  for (const category of SELL_CATEGORIES) {
+    for (const group of category.groups) {
+      for (const [id, name, basePrice] of group.items) {
+        if (seen.has(id)) continue;
+        seen.add(id);
+        entries.push({ id, name, basePrice, category: category.name, group: group.name });
+      }
+    }
+  }
+  return entries;
+}
+async function openSellSearch(player) {
+  const modal = new ModalFormData().title("§l§bGEGENSTÄNDE SUCHEN")
+    .textField("Suchbegriff (Name oder ID)", "z. B. Diamant, Eiche, minecraft:stone", { defaultValue: "" });
+  const res = await modal.show(player);
+  if (res.canceled) return openSellCategories(player);
+  const query = String(res.formValues?.[0] ?? "").trim().toLocaleLowerCase("de-DE");
+  if (!query) { tell(player, "Bitte gib einen Suchbegriff ein."); return openSellSearch(player); }
+  return showSellSearchResults(player, query, 0);
+}
+async function showSellSearchResults(player, query, page) {
+  const normalizedQuery = normalizeSearchText(query);
+  const woodQuery = ["holz", "wood", "wooden", "bretter", "planks", "holzblock", "holzblöcke"].some(term => normalizedQuery.includes(normalizeSearchText(term)));
+  const matches = allSellEntries().filter(item =>
+    normalizeSearchText(item.name).includes(normalizedQuery) ||
+    normalizeSearchText(item.id).includes(normalizedQuery) ||
+    normalizeSearchText(item.category).includes(normalizedQuery) ||
+    normalizeSearchText(item.group).includes(normalizedQuery) ||
+    (woodQuery && isWoodRelatedCatalogItem(item))
+  );
+  if (!matches.length) {
+    tell(player, "Keine Gegenstände für „" + query + "“ gefunden.");
+    return openSellSearch(player);
+  }
+  const pageSize = 30;
+  const start = page * pageSize;
+  const shown = matches.slice(start, start + pageSize);
+  const form = new ActionFormData().title("§l§cSUCHERGEBNISSE")
+    .body("§7Suchbegriff: §f" + query + "\n§7Treffer: §f" + matches.length + " §8| §7Seite " + (page + 1) + "/" + Math.ceil(matches.length / pageSize));
+  for (const item of shown) {
+    const owned = countItem(player, item.id);
+    form.button(item.name + "\n§c" + formatMoney(getPriceCents(item.id, "sell", item.basePrice)) + " / Stück §8| §7Besitz: " + owned, itemIconPath(item.id));
+  }
+  if (start + pageSize < matches.length) form.button("§eWeitere Ergebnisse");
+  form.button("§bNeue Suche");
+  form.button("§7Zurück zu Kategorien");
+  const res = await form.show(player);
+  if (res.canceled) return openSellCategories(player);
+  if (res.selection < shown.length) {
+    const item = shown[res.selection];
+    return sellCatalogEntry(player, item, () => showSellSearchResults(player, query, page));
+  }
+  let action = res.selection - shown.length;
+  if (start + pageSize < matches.length) {
+    if (action === 0) return showSellSearchResults(player, query, page + 1);
+    action--;
+  }
+  if (action === 0) return openSellSearch(player);
+  return openSellCategories(player);
+}
 async function openSellSubcategories(player, category) {
   const form = new ActionFormData().title("§l§e" + category.name.toUpperCase()).body("§7Wähle einen Unterbereich.");
   for (const group of category.groups) form.button(group.name);
@@ -773,6 +839,32 @@ async function openSellSubcategories(player, category) {
   return openSellSubcategories(player, category);
 }
 
+async function sellCatalogEntry(player, item, returnTo) {
+  const { id, name, basePrice } = item;
+  const owned = countItem(player, id);
+  if (owned < 1) {
+    tell(player, "Du besitzt keinen Gegenstand: " + name + ".");
+    return returnTo();
+  }
+  const modal = new ModalFormData().title("§l§c" + name)
+    .textField("Verkaufsmenge (Besitz: " + owned + ") – " + formatMoney(getPriceCents(id, "sell", basePrice)) + " pro Stück", "Anzahl", { defaultValue: String(owned) });
+  const amountResult = await modal.show(player);
+  if (amountResult.canceled) return returnTo();
+  const raw = String(amountResult.formValues?.[0] ?? "0").trim();
+  const qty = raw === "" ? 0 : Number(raw);
+  if (!Number.isInteger(qty) || qty < 1 || qty > owned) {
+    tell(player, "Ungültige Verkaufsmenge. Du besitzt " + owned + " " + name + ".");
+    return returnTo();
+  }
+  if (countItem(player, id) < qty || !removeItems(player, id, qty)) {
+    tell(player, "Nicht genügend " + name + " im Inventar.");
+    return returnTo();
+  }
+  const total = getPriceCents(id, "sell", basePrice) * qty;
+  setBalance(player.id, balance(player) + total);
+  tell(player, "Verkauf abgeschlossen: " + qty + "× " + name + " für " + formatMoney(total) + ".");
+  return returnTo();
+}
 async function openSellItems(player, category, group) {
   const form = new ActionFormData().title("§l§c" + group.name.toUpperCase())
     .body("§7Wähle einen Gegenstand zum Verkaufen.");
@@ -786,31 +878,8 @@ async function openSellItems(player, category, group) {
   const entry = group.items[res.selection];
   if (!entry) return openSellItems(player, category, group);
   const [id, name, basePrice] = entry;
-  const owned = countItem(player, id);
-  if (owned < 1) {
-    tell(player, "Du besitzt keinen Gegenstand: " + name + ".");
-    return openSellItems(player, category, group);
-  }
-  const modal = new ModalFormData().title("§l§c" + name)
-    .textField("Verkaufsmenge (Besitz: " + owned + ") – " + formatMoney(getPriceCents(id, "sell", basePrice)) + " pro Stück", "Anzahl", { defaultValue: String(owned) });
-  const amountResult = await modal.show(player);
-  if (amountResult.canceled) return openSellItems(player, category, group);
-  const raw = String(amountResult.formValues?.[0] ?? "0").trim();
-  const qty = raw === "" ? 0 : Number(raw);
-  if (!Number.isInteger(qty) || qty < 1 || qty > owned) {
-    tell(player, "Ungültige Verkaufsmenge. Du besitzt " + owned + " " + name + ".");
-    return openSellItems(player, category, group);
-  }
-  if (countItem(player, id) < qty || !removeItems(player, id, qty)) {
-    tell(player, "Nicht genügend " + name + " im Inventar.");
-    return openSellItems(player, category, group);
-  }
-  const total = getPriceCents(id, "sell", basePrice) * qty;
-  setBalance(player.id, balance(player) + total);
-  tell(player, "Verkauf abgeschlossen: " + qty + "× " + name + " für " + formatMoney(total) + ".");
-  return openSellItems(player, category, group);
+  return sellCatalogEntry(player, { id, name, basePrice }, () => openSellItems(player, category, group));
 }
-
 async function openAdminMenu(player) {
   const form = new ActionFormData().title("§l§cBAZAAR-ADMIN")
     .body("§7Preise werden dauerhaft in den Weltdaten gespeichert.")
