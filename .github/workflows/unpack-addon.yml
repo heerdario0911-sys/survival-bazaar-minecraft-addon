@@ -1,11 +1,9 @@
 name: Add-on-Quellen entpacken
 
 on:
+  # Nur manuell starten: ein beliebiger ZIP-/MCAddon-Upload darf niemals
+  # die geprüften Quellcodedateien automatisch überschreiben.
   workflow_dispatch:
-  push:
-    paths:
-      - '*.mcaddon'
-      - '.github/workflows/unpack-addon.yml'
 
 permissions:
   contents: write
