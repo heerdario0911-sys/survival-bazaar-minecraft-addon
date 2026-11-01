@@ -1,0 +1,34 @@
+name: Add-on-Quellen entpacken
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '*.mcaddon'
+
+permissions:
+  contents: write
+
+jobs:
+  unpack:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+      - name: Aktuelles Add-on entpacken
+        run: |
+          set -e
+          FILE="SurvivalBazaar_Bedrock_26.60_v3.mcaddon"
+          test -f "$FILE"
+          mkdir -p source
+          unzip -o "$FILE" -d source
+          find source -type f -maxdepth 6 -print
+      - name: Entpackte Quellen speichern
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add source
+          if ! git diff --cached --quiet; then
+            git commit -m "Extract Bedrock add-on source for maintenance"
+            git push
+          fi
