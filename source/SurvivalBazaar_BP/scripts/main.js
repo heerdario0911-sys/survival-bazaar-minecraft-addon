@@ -743,20 +743,20 @@ async function openSellItems(player, category, group) {
   const res=await form.show(player);
   if(res.canceled||res.selection===group.items.length) return openSellSubcategories(player,category);
   const entry=group.items[res.selection];
-  if(entry) return chooseSellQuantity(player,entry,category,group);
+  if(entry) return chooseSellQuantity(player,entry,category,group,returnTo);
   return openSellItems(player,category,group);
 }
-async function chooseSellQuantity(player,entry,category,group) {
+async function chooseSellQuantity(player,entry,category,group,returnTo=()=>openSellItems(player,category,group)) {
   const [id,name,basePrice]=entry;
   const owned=countItem(player,id);
-  if(owned<1){tell(player,"Du besitzt diesen Gegenstand nicht.");return openSellItems(player,category,group);}
+  if(owned<1){tell(player,"Du besitzt diesen Gegenstand nicht.");return returnTo();}
   const modal=new ModalFormData().title("§l§c"+name)
     .textField("Anzahl (Besitz: "+owned+") – "+formatMoney(getPriceCents(id,"sell",basePrice))+" / Stück","z. B. 1","1");
   const res=await modal.show(player);
-  if(res.canceled)return openSellItems(player,category,group);
+  if(res.canceled)return returnTo();
   const qty=Math.floor(Number(res.formValues?.[0]));
   if(!Number.isInteger(qty)||qty<1||qty>owned){tell(player,"Ungültige Menge. Du besitzt "+owned+".");return chooseSellQuantity(player,entry,category,group);}
-  if(!removeItems(player,id,qty)){tell(player,"Gegenstand konnte nicht entnommen werden.");return openSellItems(player,category,group);}
+  if(!removeItems(player,id,qty)){tell(player,"Gegenstand konnte nicht entnommen werden.");return returnTo();}
   const total=getPriceCents(id,"sell",basePrice)*qty;
   setBalance(player.id,balance(player)+total);
   tell(player,qty+"× "+name+" verkauft für "+formatMoney(total)+".");
@@ -795,7 +795,7 @@ async function openAdminSpecialItems(player, side) {
  const entry=entries[res.selection];
  if(!entry)return openAdminSpecialItems(player,side);
  if(side==="buy") return chooseBuyQuantity(player,entry,()=>openAdminSpecialItems(player,"buy"));
- return chooseSellQuantity(player,entry,{name:"Admin-Sonderartikel",groups:[]},{name:"Spawn-Eier und Spawner",items:entries});
+ return chooseSellQuantity(player,entry,{name:"Admin-Sonderartikel",groups:[]},{name:"Spawn-Eier und Spawner",items:entries},()=>openAdminSpecialItems(player,"sell"));
 }
 
 async function openAdminMenu(player) {
