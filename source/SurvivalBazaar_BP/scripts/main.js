@@ -15,6 +15,11 @@ const LISTINGS_KEY = "bazaar:listings";
 const PRICES_KEY = "bazaar:prices";
 const DIRECT_TRADES_KEY = "bazaar:direct_trades";
 
+function isAdminOnlyItem(itemId) {
+  const raw = String(itemId || "").replace(/^minecraft:/, "");
+  return raw.endsWith("_spawn_egg") || raw === "mob_spawner" || raw === "spawner";
+}
+
 // Texturpfade für Item-Schaltflächen im Kauf-, Verkaufs- und Spielermarkt.
 const CUSTOM_ITEM_ICONS = {
   "survivalbazaar:modern_sofa": "textures/blocks/sofa.png",
@@ -1231,7 +1236,7 @@ async function openAdminSellItems(player, category, group) {
 
 async function openMarket(player) {
   const allOffers = listings().filter(x => x && x.id);
-  const offers = allOffers.filter(x => x.sellerId !== player.id);
+  const offers = allOffers.filter(x => x.sellerId !== player.id && !isAdminOnlyItem(x.itemId));
   const ownCount = allOffers.filter(x => x.sellerId === player.id).length;
   const form = new ActionFormData().title("§l§bSPIELER-MARKTPLATZ")
     .body("§7Angebote anderer Spieler. Dein Guthaben: §6" + formatMoney(balance(player)));
@@ -1336,6 +1341,7 @@ async function createListing(player) {
   const held = inv?.getItem(player.selectedSlotIndex);
   if (!held) { tell(player, "Halte das Item, das du anbieten möchtest, in der Hand."); return openMarket(player); }
   const itemId = held.typeId;
+  if (isAdminOnlyItem(itemId)) { tell(player, "Spawn-Eier und Mobspawner sind dem Admin-Kauf und -Verkauf vorbehalten."); return openMarket(player); }
   const itemName = held.nameTag || itemId.replace("minecraft:", "").replaceAll("_", " ");
   const modal = new ModalFormData().title("Item anbieten")
     .textField("Anzahl (max. 64)", "z. B. 1", { defaultValue: String(held.amount) })
