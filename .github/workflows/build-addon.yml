@@ -20,7 +20,7 @@ jobs:
       - name: PNG-Dateiköpfe normalisieren
         run: |
           python3 - <<'PY'
-          import pathlib
+          import pathlib, struct, zlib
           slash = bytes([92])
           prefix = slash + b"x89PNG" + slash + b"r" + slash + b"n" + slash + b"x1a" + slash + b"n"
           png_header = bytes([137, 80, 78, 71, 13, 10, 26, 10])
@@ -28,9 +28,40 @@ jobs:
           for path in pathlib.Path("source/SurvivalBazaar_RP/textures").rglob("*.png"):
               data = path.read_bytes()
               if data.startswith(prefix):
-                  path.write_bytes(png_header + data[len(prefix):])
+                  data = png_header + data[len(prefix):]
+              if not data.startswith(png_header):
+                  raise ValueError(f"Ungültiger PNG-Kopf: {path}")
+              pos, chunks, idat = 8, [], b""
+              while pos < len(data):
+                  size = struct.unpack(">I", data[pos:pos+4])[0]
+                  kind = data[pos+4:pos+8]
+                  chunk = data[pos+8:pos+8+size]
+                  if kind == b"IDAT":
+                      idat += chunk
+                  else:
+                      chunks.append((kind, chunk))
+                  pos += 12 + size
+              raw = zlib.decompress(idat)
+              width, height, depth, color, comp, filt, interlace = struct.unpack(">IIBBBBB", data[16:29])
+              channels = {0:1, 2:3, 3:1, 4:2, 6:4}[color]
+              expected = height * (1 + width * channels * depth // 8)
+              repaired = raw.replace(slash + b"x00", b"\\x00")
+              if len(raw) != expected and len(repaired) == expected:
+                  raw = repaired
+                  compressed = zlib.compress(raw, 9)
+                  rebuilt = png_header
+                  inserted = False
+                  for kind, chunk in chunks:
+                      if kind == b"IEND" and not inserted:
+                          crc = zlib.crc32(b"IDAT" + compressed) & 0xffffffff
+                          rebuilt += struct.pack(">I", len(compressed)) + b"IDAT" + compressed + struct.pack(">I", crc)
+                          inserted = True
+                      crc = zlib.crc32(kind + chunk) & 0xffffffff
+                      rebuilt += struct.pack(">I", len(chunk)) + kind + chunk + struct.pack(">I", crc)
+                  data = rebuilt
                   fixed.append(str(path))
-          print("Normalisierte PNG-Dateien:", fixed)
+              path.write_bytes(data)
+          print("Normalisierte/reparierte PNG-Dateien:", fixed)
           PY
       - name: JSON-, Modell- und Texturzuordnungen prüfen
         run: |
@@ -71,7 +102,16 @@ jobs:
           for path in (rp / "textures").rglob("*.png"):
               data = path.read_bytes()
               assert data.startswith(bytes([137,80,78,71,13,10,26,10])), f"Ungültige PNG: {path}"
-              w, h = struct.unpack(">II", data[16:24])
+              w, h, depth, color, comp, filt, interlace = struct.unpack(">IIBBBBB", data[16:29])
+              pos, idat = 8, b""
+              while pos < len(data):
+                  size = struct.unpack(">I", data[pos:pos+4])[0]
+                  kind = data[pos+4:pos+8]
+                  if kind == b"IDAT": idat += data[pos+8:pos+8+size]
+                  pos += 12 + size
+              channels = {0:1, 2:3, 3:1, 4:2, 6:4}[color]
+              expected = h * (1 + w * channels * depth // 8)
+              assert len(__import__("zlib").decompress(idat)) == expected, f"Beschädigter PNG-Bilddatenstrom: {path}"
               assert w > 1 and h > 1 and (len(data) > 200 or path.name in {"furniture_anchor.png", "bed.png", "chair.png", "fridge.png", "mirror.png", "sofa.png", "table.png", "tv.png"}), f"Platzhalter-/leere Textur: {path}"
           # Loot-Tabellen, Atlas-Dateien und Block-Referenzen prüfen.
           for path in (bp / "blocks").glob("*.json"):
