@@ -6,7 +6,7 @@
         "identifier": "geometry.survivalbazaar.coffee_table",
         "texture_width": 16,
         "texture_height": 16,
-        "visible_bounds_width": 1.5,
+        "visible_bounds_width": 2,
         "visible_bounds_height": 2,
         "visible_bounds_offset": [
           0,
@@ -18,16 +18,16 @@
         {
           "name": "root",
           "pivot": [
+            8,
             0,
-            0,
-            0
+            8
           ],
           "cubes": [
             {
               "origin": [
-                -7,
+                1,
                 7,
-                -7
+                1
               ],
               "size": [
                 14,
@@ -41,9 +41,9 @@
             },
             {
               "origin": [
-                -6,
+                2,
                 0,
-                -6
+                2
               ],
               "size": [
                 2,
@@ -57,9 +57,9 @@
             },
             {
               "origin": [
-                4,
+                12,
                 0,
-                -6
+                2
               ],
               "size": [
                 2,
@@ -73,9 +73,9 @@
             },
             {
               "origin": [
-                -6,
+                2,
                 0,
-                4
+                12
               ],
               "size": [
                 2,
@@ -89,9 +89,9 @@
             },
             {
               "origin": [
-                4,
+                12,
                 0,
-                4
+                12
               ],
               "size": [
                 2,

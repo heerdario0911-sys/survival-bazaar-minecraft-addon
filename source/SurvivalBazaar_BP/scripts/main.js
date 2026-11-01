@@ -13,56 +13,6 @@ const parseMoneyToCents = value => {
 const ACCOUNTS_KEY = "bazaar:accounts";
 const LISTINGS_KEY = "bazaar:listings";
 const PRICES_KEY = "bazaar:prices";
-const DIRECT_TRADES_KEY = "bazaar:direct_trades";
-
-function isAdminOnlyItem(itemId) {
-  const raw = String(itemId || "").replace(/^minecraft:/, "");
-  return raw.endsWith("_spawn_egg") || raw === "mob_spawner" || raw === "spawner";
-}
-
-// Texturpfade für Item-Schaltflächen im Kauf-, Verkaufs- und Spielermarkt.
-const CUSTOM_ITEM_ICONS = {
-  "survivalbazaar:modern_sofa": "textures/blocks/sofa",
-  "survivalbazaar:grandfather_clock": "textures/blocks/grandfather_clock",
-  "survivalbazaar:hanging_guitar": "textures/blocks/hanging_guitar",
-  "survivalbazaar:bar_counter": "textures/blocks/bar_counter",
-  "survivalbazaar:bar_stool": "textures/blocks/bar_stool",
-  "survivalbazaar:wall_shelf": "textures/blocks/wall_shelf",
-  "survivalbazaar:potted_plant": "textures/blocks/potted_plant",
-  "survivalbazaar:flat_tv": "textures/blocks/tv",
-  "survivalbazaar:wall_mirror": "textures/blocks/mirror",
-  "survivalbazaar:coffee_table": "textures/blocks/table",
-  "survivalbazaar:modern_chair": "textures/blocks/chair",
-  "survivalbazaar:double_bed": "textures/blocks/bed",
-  "survivalbazaar:fridge": "textures/blocks/fridge",
-  "survivalbazaar:dining_table": "textures/blocks/table",
-  "survivalbazaar:wardrobe": "textures/blocks/fridge",
-  "survivalbazaar:bookshelf": "textures/blocks/table",
-  "survivalbazaar:floor_lamp": "textures/blocks/tv",
-  "survivalbazaar:armchair": "textures/blocks/chair"
-};
-const BLOCK_ITEM_IDS = new Set((
-  "dirt coarse_dirt rooted_dirt grass_block podzol mycelium mud clay sand red_sand gravel snow_block ice packed_ice blue_ice stone cobblestone mossy_cobblestone granite diorite andesite deepslate cobbled_deepslate tuff calcite dripstone_block bricks stone_bricks quartz_block obsidian crying_obsidian oak_log spruce_log birch_log jungle_log acacia_log dark_oak_log mangrove_log cherry_log bamboo_block crimson_stem warped_stem hay_block moss_block bone_block glass glass_pane glowstone sea_lantern lantern torch bookshelf flower_pot terracotta white_wool white_concrete white_concrete_powder wool concrete concrete_powder stained_glass stained_glass_pane carpet bed banner shulker_box candle stairs slab fence fence_gate door trapdoor button pressure_plate sign bamboo_mosaic stone_stairs stone_slab cobblestone_stairs cobblestone_slab stone_brick_stairs stone_brick_slab brick_stairs brick_slab quartz_stairs quartz_slab polished_andesite_stairs polished_andesite_slab polished_diorite_stairs polished_diorite_slab polished_granite_stairs polished_granite_slab iron_door iron_trapdoor ladder scaffolding chain iron_bars"
-).split(/\s+/));
-function itemIconPath(itemId) {
-  if (CUSTOM_ITEM_ICONS[itemId]) return CUSTOM_ITEM_ICONS[itemId];
-  const path = String(itemId).replace(/^minecraft:/, "");
-  // Vanilla-Icons werden nicht mehr über vermutete Dateinamen geladen:
-  // Bedrock nutzt je nach Gegenstand abweichende Atlasnamen. Diese sicheren
-  // Bazaar-Kategorie-Icons verhindern fehlende/lila-schwarze Vorschauen.
-  if (/(sword|bow|crossbow|trident|mace|arrow|shield|helmet|chestplate|leggings|boots|armor)/.test(path))
-    return "textures/ui/icons/combat";
-  if (/(beef|porkchop|chicken|mutton|rabbit|cod|salmon|fish|apple|carrot|potato|beetroot|melon|pumpkin|berries|bread|cookie|cake|pie|stew|kelp|honey|chorus_fruit)/.test(path))
-    return "textures/ui/icons/food";
-  if (/(seed|sapling|propagule|flower|mushroom|fungus|roots|vines|wheat|sugar_cane|cocoa|wart|kelp|bamboo|cactus|plant)/.test(path))
-    return "textures/ui/icons/plants";
-  if (/(log|wood|plank|stone|dirt|sand|gravel|brick|glass|wool|concrete|terracotta|ore|block|slab|stairs|fence|door|trapdoor|wall|torch|lantern)/.test(path))
-    return "textures/ui/icons/blocks";
-  if (/(ingot|nugget|raw_|diamond|emerald|quartz|coal|charcoal|scrap|shard|pearl|star|totem|shell|echo|bone|string|leather|feather|gunpowder|redstone|lapis)/.test(path))
-    return "textures/ui/icons/materials";
-  return "textures/ui/icons/misc";
-}
-
 const SHOP = [
   { id: "minecraft:bread", name: "Brot", buy: 8, sell: 3 },
   { id: "minecraft:torch", name: "Fackel", buy: 2, sell: 1 },
@@ -73,25 +23,19 @@ const SHOP = [
   { id: "minecraft:arrow", name: "Pfeil", buy: 3, sell: 1 },
   { id: "minecraft:ender_pearl", name: "Enderperle", buy: 45, sell: 15 },
   // Moderne, eigens modellierte Möbel aus dem Survival Bazaar Resource Pack
-  { id: "survivalbazaar:modern_sofa", name: "Sofa", buy: 25, sell: 9 },
-  { id: "survivalbazaar:flat_tv", name: "Fernseher", buy: 33, sell: 12 },
+  { id: "survivalbazaar:modern_sofa", name: "Modernes Sofa", buy: 25, sell: 9 },
+  { id: "survivalbazaar:flat_tv", name: "Flachbildfernseher", buy: 33, sell: 12 },
   { id: "survivalbazaar:wall_mirror", name: "Wandspiegel", buy: 13, sell: 5 },
   { id: "survivalbazaar:coffee_table", name: "Couchtisch", buy: 10, sell: 3 },
-  { id: "survivalbazaar:modern_chair", name: "Stuhl", buy: 15, sell: 5 },
+  { id: "survivalbazaar:modern_chair", name: "Moderner Sessel", buy: 15, sell: 5 },
   { id: "survivalbazaar:double_bed", name: "Doppelbett", buy: 28, sell: 10 },
   { id: "survivalbazaar:fridge", name: "Kühlschrank", buy: 30, sell: 10 }
 ,
   { id: "survivalbazaar:dining_table", name: "Esstisch", buy: 32, sell: 12 }
   ,{ id: "survivalbazaar:wardrobe", name: "Kleiderschrank", buy: 48, sell: 18 }
-  ,{ id: "survivalbazaar:bookshelf", name: "Bücherregal", buy: 28, sell: 10 }
+  ,{ id: "survivalbazaar:bookshelf", name: "Modernes Bücherregal", buy: 28, sell: 10 }
   ,{ id: "survivalbazaar:floor_lamp", name: "Stehlampe", buy: 20, sell: 7 }
-  ,{ id: "survivalbazaar:armchair", name: "Sessel", buy: 24, sell: 9 }
-  ,{ id: "survivalbazaar:grandfather_clock", name: "Standuhr", buy: 38, sell: 14 }
-  ,{ id: "survivalbazaar:hanging_guitar", name: "Gitarre", buy: 29, sell: 10 }
-  ,{ id: "survivalbazaar:bar_counter", name: "Bartisch", buy: 42, sell: 16 }
-  ,{ id: "survivalbazaar:bar_stool", name: "Barhocker", buy: 18, sell: 6 }
-  ,{ id: "survivalbazaar:wall_shelf", name: "Wandregal", buy: 16, sell: 6 }
-  ,{ id: "survivalbazaar:potted_plant", name: "Topfpflanze", buy: 9, sell: 3 }
+  ,{ id: "survivalbazaar:armchair", name: "Polstersessel", buy: 24, sell: 9 }
 ];
 
 // Verkaufs-Katalog: mehrstufige Kategorien, jedes Item einzeln verkaufbar.
@@ -340,9 +284,6 @@ function buildCompleteCatalog() {
   if (technical.test(raw)) continue;
   // Nur Einträge, die Bedrock als echtes Inventar-Item anlegen kann.
   try { new ItemStack(id, 1); } catch { continue; }
-  const rawItemId = id.replace(/^minecraft:/, "");
-  // Spawn-Eier und Mobspawner sind ausschließlich über /admin verfügbar.
-  if (rawItemId.endsWith("_spawn_egg") || rawItemId === "mob_spawner" || rawItemId === "spawner") continue;
   const category = catalogCategory(id);
   if (category === "Technische Gegenstände") continue;
   if (!grouped.has(category)) grouped.set(category, []);
@@ -370,13 +311,7 @@ function buildCompleteCatalog() {
   const buyGroups = [];
   for (let i = 0; i < items.length; i += 12) {
    const page = Math.floor(i / 12) + 1;
-   const firstLetter = value => {
-    const letter = String(value || "").trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").match(/[a-z]/i)?.[0];
-    return letter ? letter.toLocaleUpperCase("de-DE") : "#";
-   };
-   const first = firstLetter(items[i][1]);
-   const last = firstLetter(items[Math.min(i + 11, items.length - 1)][1]);
-   const label = items.length > 12 ? "Artikel " + first + (first === last ? "" : "–" + last) : "Alle Artikel";
+   const label = items.length > 12 ? "Artikel " + page + "/" + Math.ceil(items.length / 12) : "Alle Artikel";
    const sellItems = items.slice(i, i + 12);
    sellGroups.push({ name: label, items: sellItems });
    buyGroups.push({
@@ -515,194 +450,19 @@ function removeItems(player, typeId, amount) {
   return left === 0;
 }
 async function openMain(player) {
-  buildCompleteCatalog();
   const money = balance(player);
-  const cart = getBuyCart(player);
   const form = new ActionFormData()
     .title("§l§6SURVIVAL BAZAAR")
-    .body("§6DEIN MARKT\n§7Wähle einen Bereich. Guthaben und Warenkorb bleiben hier immer direkt erreichbar.\n\n§eGUTHABEN: §a" + formatMoney(money) + "\n§eWARENKORB: §f" + cart.size + " Artikel – " + formatMoney(cartTotal(cart)));
-  form.button("§a§lKAUFEN\n§7Server-Sortiment und Kategorien");
-  form.button("§c§lVERKAUFEN\n§7Gegenstände aus deinem Inventar");
-  form.button("§b§lSPIELER-MARKT\n§7Angebote anderer Spieler");
-  form.button("§d§lMIT PERSON TAUSCHEN\n§7Direkten Handel vorbereiten");
-  form.button("§e§lGUTHABEN\n§6" + formatMoney(money));
-  form.button("§6§lWARENKORB\n§7" + cart.size + " Artikel – " + formatMoney(cartTotal(cart)));
+    .body("§fDein Kontostand: §6" + formatMoney(money) + "\n§7Wähle einen Bereich.")
+    .button("§aServer-Shop\n§7Items kaufen und verkaufen")
+    .button("§bSpieler-Marktplatz\n§7Angebote anderer Spieler")
+    .button("§eKontostand");
   form.button("§7Schließen");
   const res = await form.show(player);
-  if (res.canceled || res.selection === 6) return;
-  if (res.selection === 0) return openBuyShop(player);
-  if (res.selection === 1) return openSellCategories(player);
-  if (res.selection === 2) return openMarket(player);
-  if (res.selection === 3) return openDirectTradeInfo(player);
-  if (res.selection === 4) return openBalancePanel(player);
-  if (res.selection === 5) return openBuyBasket(player, openMain);
-}
-async function openBalancePanel(player) {
-  const money = balance(player);
-  const form = new ActionFormData().title("§l§eGUTHABEN")
-    .body("§7Dein persönliches Bazaar-Konto\n\n§eAktueller Kontostand:\n§6§l" + formatMoney(money))
-    .button("§7Zurück zum Hauptmenü");
-  await form.show(player);
-  return openMain(player);
-}
-function directTrades() { return readJson(DIRECT_TRADES_KEY, []); }
-function saveDirectTrades(value) { writeJson(DIRECT_TRADES_KEY, value); }
-
-async function openDirectTradeInfo(player) {
-  const all = directTrades().filter(t => t && t.id);
-  const incoming = all.filter(t => t.buyerId === player.id);
-  const outgoing = all.filter(t => t.sellerId === player.id);
-  const form = new ActionFormData().title("§l§dDIREKTER SPIELERHANDEL")
-    .body("§7Handel direkt mit einer Person aus dieser Welt. Beide Spieler müssen online sein.\n\n§eEingehende Angebote: §f" + incoming.length + "\n§eDeine offenen Angebote: §f" + outgoing.length);
-  form.button("§aAngebot an Spieler erstellen");
-  for (const trade of incoming.slice(0, 12)) {
-    form.button("§eAngebot von " + trade.sellerName + "\n§f" + trade.amount + "× " + trade.itemName + " – §6" + formatMoney(trade.price));
-  }
-  for (const trade of outgoing.slice(0, 8)) {
-    form.button("§cEigenes Angebot zurücknehmen\n§7" + trade.amount + "× " + trade.itemName + " an " + trade.buyerName);
-  }
-  form.button("§7Zurück zum Hauptmenü");
-  const res = await form.show(player);
-  if (res.canceled || res.selection === 1 + incoming.slice(0, 12).length + outgoing.slice(0, 8).length) return openMain(player);
-  if (res.selection === 0) return createDirectTrade(player);
-  if (res.selection >= 1 && res.selection <= incoming.slice(0, 12).length) {
-    return reviewDirectTrade(player, incoming[res.selection - 1]);
-  }
-  const ownIndex = res.selection - 1 - incoming.slice(0, 12).length;
-  const ownTrade = outgoing.slice(0, 8)[ownIndex];
-  if (ownTrade) {
-    saveDirectTrades(directTrades().filter(t => t.id !== ownTrade.id));
-    tell(player, "Dein direktes Handelsangebot wurde zurückgenommen.");
-  }
-  return openDirectTradeInfo(player);
-}
-
-async function createDirectTrade(player) {
-  const targets = world.getAllPlayers().filter(p => p.id !== player.id);
-  if (!targets.length) {
-    tell(player, "Außer dir ist gerade kein anderer Spieler online.");
-    return openDirectTradeInfo(player);
-  }
-  const choose = new ActionFormData().title("§l§dHANDELSPARTNER")
-    .body("§7Wähle den Spieler, dem du ein persönliches Angebot machen möchtest.");
-  for (const target of targets) choose.button(target.name);
-  choose.button("§7Abbrechen");
-  const selected = await choose.show(player);
-  if (selected.canceled || selected.selection === targets.length) return openDirectTradeInfo(player);
-  const buyer = targets[selected.selection];
-  if (!buyer) return openDirectTradeInfo(player);
-
-  const inv = player.getComponent("minecraft:inventory")?.container;
-  const held = inv?.getItem(player.selectedSlotIndex);
-  if (!held) {
-    tell(player, "Halte zuerst den Gegenstand in der Hand, den du anbieten möchtest.");
-    return openDirectTradeInfo(player);
-  }
-  const modal = new ModalFormData().title("§l§dHANDELSANGEBOT")
-    .textField("Anzahl (du besitzt " + countItem(player, held.typeId) + ")", "z. B. 4", { defaultValue: String(held.amount) })
-    .textField("Preis in Coins (€), den " + buyer.name + " zahlen soll", "z. B. 12,50", { defaultValue: "10,00" });
-  const data = await modal.show(player);
-  if (data.canceled) return openDirectTradeInfo(player);
-  const amount = Number(String(data.formValues?.[0] ?? "").trim());
-  const price = parseMoneyToCents(data.formValues?.[1]);
-  const owned = countItem(player, held.typeId);
-  if (!Number.isInteger(amount) || amount < 1 || amount > owned || amount > 64 ||
-      !Number.isSafeInteger(price) || price < 0 || price > 100000000) {
-    tell(player, "Ungültige Menge oder ungültiger Preis. Erlaubt sind 1 bis 64 Items und 0 bis 1.000.000 €.");
-    return openDirectTradeInfo(player);
-  }
-  const active = directTrades();
-  if (active.some(t => t.sellerId === player.id && t.buyerId === buyer.id && t.itemId === held.typeId)) {
-    tell(player, "Für diesen Spieler und Gegenstand hast du bereits ein offenes Angebot.");
-    return openDirectTradeInfo(player);
-  }
-  const trade = {
-    id: String(Date.now()) + "-" + player.id,
-    sellerId: player.id, sellerName: player.name,
-    buyerId: buyer.id, buyerName: buyer.name,
-    itemId: held.typeId, itemName: held.nameTag || held.typeId.replace("minecraft:", "").replaceAll("_", " "),
-    amount, price, createdAt: Date.now()
-  };
-  active.push(trade);
-  try { saveDirectTrades(active); }
-  catch (error) { tell(player, "Angebot konnte nicht gespeichert werden: " + (error?.message ?? String(error))); return openDirectTradeInfo(player); }
-  tell(player, "Dein Angebot an " + buyer.name + " wurde gesendet.");
-  tell(buyer, "Du hast ein persönliches Bazaar-Handelsangebot von " + player.name + " erhalten. Öffne /market → Mit Person tauschen.");
-  return openDirectTradeInfo(player);
-}
-
-async function reviewDirectTrade(player, trade) {
-  const seller = world.getAllPlayers().find(p => p.id === trade.sellerId);
-  const form = new ActionFormData().title("§l§eHANDELSANGEBOT")
-    .body("§7Angebot von §f" + trade.sellerName + "\n\n§eDu erhältst: §f" + trade.amount + "× " + trade.itemName +
-      "\n§eDu bezahlst: §6" + formatMoney(trade.price) +
-      "\n\n§7Anbieter gerade online: " + (seller ? "§aJa" : "§cNein") +
-      "\n§7Dein Guthaben: §6" + formatMoney(balance(player)));
-  form.button("§aAnnehmen");
-  form.button("§cAblehnen");
-  form.button("§7Zurück");
-  const res = await form.show(player);
-  if (res.canceled || res.selection === 2) return openDirectTradeInfo(player);
-  if (res.selection === 1) {
-    saveDirectTrades(directTrades().filter(t => t.id !== trade.id));
-    if (seller) tell(seller, player.name + " hat dein Handelsangebot abgelehnt.");
-    tell(player, "Handelsangebot abgelehnt.");
-    return openDirectTradeInfo(player);
-  }
-  if (!seller) {
-    tell(player, "Der Anbieter muss online sein, damit der Handel sicher abgeschlossen werden kann.");
-    return openDirectTradeInfo(player);
-  }
-  const current = directTrades();
-  const liveTrade = current.find(t => t.id === trade.id && t.buyerId === player.id);
-  if (!liveTrade) {
-    tell(player, "Dieses Angebot ist nicht mehr verfügbar.");
-    return openDirectTradeInfo(player);
-  }
-  if (balance(player) < liveTrade.price) {
-    tell(player, "Du hast nicht genug Coins für dieses Angebot.");
-    return openDirectTradeInfo(player);
-  }
-  if (countItem(seller, liveTrade.itemId) < liveTrade.amount) {
-    tell(player, "Der Anbieter besitzt die angebotene Menge nicht mehr. Das Angebot wurde entfernt.");
-    saveDirectTrades(current.filter(t => t.id !== liveTrade.id));
-    return openDirectTradeInfo(player);
-  }
-  if (!canFitItem(player, liveTrade.itemId, liveTrade.amount)) {
-    tell(player, "Dein Inventar hat nicht genug Platz.");
-    return openDirectTradeInfo(player);
-  }
-  if (!removeItems(seller, liveTrade.itemId, liveTrade.amount)) {
-    tell(player, "Die Ware konnte beim Anbieter nicht entnommen werden.");
-    return openDirectTradeInfo(player);
-  }
-  if (!addItem(player, liveTrade.itemId, liveTrade.amount)) {
-    addItem(seller, liveTrade.itemId, liveTrade.amount);
-    tell(player, "Die Ware konnte nicht übertragen werden. Es wurde nichts berechnet.");
-    return openDirectTradeInfo(player);
-  }
-  const buyerBalanceBefore = balance(player);
-  const sellerBalanceBefore = balance(seller);
-  try {
-    setBalance(player.id, buyerBalanceBefore - liveTrade.price);
-    setBalance(seller.id, sellerBalanceBefore + liveTrade.price);
-    saveDirectTrades(current.filter(t => t.id !== liveTrade.id));
-  } catch (error) {
-    // Rollback: Ware und Kontostände werden wiederhergestellt, wenn das
-    // Speichern des abgeschlossenen Handels fehlschlägt.
-    removeItems(player, liveTrade.itemId, liveTrade.amount);
-    addItem(seller, liveTrade.itemId, liveTrade.amount);
-    try {
-      setBalance(player.id, buyerBalanceBefore);
-      setBalance(seller.id, sellerBalanceBefore);
-    } catch {}
-    tell(player, "Handel konnte nicht sicher gespeichert werden. Ware und Guthaben wurden zurückgesetzt.");
-    tell(seller, "Handel konnte nicht sicher gespeichert werden. Ware und Guthaben wurden zurückgesetzt.");
-    return openDirectTradeInfo(player);
-  }
-  tell(player, "Handel abgeschlossen: " + liveTrade.amount + "× " + liveTrade.itemName + " erhalten für " + formatMoney(liveTrade.price) + ".");
-  tell(seller, player.name + " hat dein Angebot angenommen. Du hast " + formatMoney(liveTrade.price) + " erhalten.");
-  return openDirectTradeInfo(player);
+  if (res.canceled) return;
+  if (res.selection === 0) return openShop(player);
+  if (res.selection === 1) return openMarket(player);
+  if (res.selection === 2) return tell(player, "Du besitzt §6" + formatMoney(balance(player)) + "§r.");
 }
 async function openShop(player) {
   const form = new ActionFormData().title("§l§aSERVER-SHOP")
@@ -745,7 +505,7 @@ async function addToBuyCart(player, entry, qty, returnTo) {
 async function chooseBuyQuantity(player, entry, returnTo) {
   const [id, name] = entry;
   const modal = new ModalFormData().title("§l§a" + name)
-    .textField("Anzahl zum Warenkorb hinzufügen (1–64)", "z. B. 4", { defaultValue: "1" });
+    .textField("Anzahl zum Warenkorb hinzufügen (1–64)", "z. B. 4", "1");
   const res = await modal.show(player);
   if (res.canceled) return returnTo();
   const qty = Number(String(res.formValues?.[0] ?? "").trim());
@@ -767,7 +527,7 @@ async function openBuyBasket(player, returnTo = openBuyShop) {
   if (res.selection < entries.length) {
     const item = entries[res.selection];
     const modal = new ModalFormData().title("§l§e" + item.name)
-      .textField("Neue Menge (0 = entfernen, maximal 64)", "Anzahl", { defaultValue: String(item.qty) });
+      .textField("Neue Menge (0 = entfernen, maximal 64)", "Anzahl", String(item.qty));
     const edit = await modal.show(player);
     if (edit.canceled) return openBuyBasket(player, returnTo);
     const qty = Number(String(edit.formValues?.[0] ?? "").trim());
@@ -800,25 +560,19 @@ async function checkoutBuyBasket(player, returnTo) {
     tell(player, "Nicht genug gemeinsamer Inventarplatz für deinen gesamten Warenkorb. Bitte ändere die Mengen.");
     return openBuyBasket(player, returnTo);
   }
-  const added = [];
-  try {
-    for (const item of entries) {
-      if (!addItem(player, item.id, item.qty)) throw new Error(item.name + " konnte nicht hinzugefügt werden.");
-      added.push(item);
+  for (const item of entries) {
+    if (!addItem(player, item.id, item.qty)) {
+      tell(player, "Kauf abgebrochen: " + item.name + " konnte nicht hinzugefügt werden.");
+      return openBuyBasket(player, returnTo);
     }
-    setBalance(player.id, balance(player) - total);
-  } catch (error) {
-    for (const item of added.reverse()) removeItems(player, item.id, item.qty);
-    tell(player, "Kauf abgebrochen. Alle bereits hinzugefügten Waren wurden zurückgesetzt: " + (error?.message ?? String(error)));
-    return openBuyBasket(player, returnTo);
   }
+  setBalance(player.id, balance(player) - total);
   cart.clear();
   tell(player, "Einkauf abgeschlossen: " + entries.length + " verschiedene Items für " + formatMoney(total) + ".");
   return returnTo(player);
 }
 
 async function openBuyShop(player) {
-  buildCompleteCatalog();
   const cart = getBuyCart(player);
   const form = new ActionFormData().title("§l§aITEMS KAUFEN")
     .body("§7Wähle eine Kategorie oder suche direkt im gesamten Katalog.\n§7Warenkorb: §e" + cart.size + " verschiedene Items – " + formatMoney(cartTotal(cart)))
@@ -851,9 +605,8 @@ function allBuyEntries() {
 }
 
 async function openBuySearch(player) {
-  buildCompleteCatalog();
   const modal = new ModalFormData().title("§l§bGEGENSTÄNDE SUCHEN")
-    .textField("Suchbegriff (Name oder ID)", "z. B. Diamant, Eiche, minecraft:stone", { defaultValue: "" });
+    .textField("Suchbegriff (Name oder ID)", "z. B. Diamant, Eiche, minecraft:stone", "");
   const res = await modal.show(player);
   if (res.canceled) return openBuyShop(player);
   const query = String(res.formValues?.[0] ?? "").trim().toLocaleLowerCase("de-DE");
@@ -861,28 +614,12 @@ async function openBuySearch(player) {
   return showBuySearchResults(player, query, 0);
 }
 
-const WOOD_FAMILIES = ["oak","spruce","birch","jungle","acacia","dark_oak","mangrove","cherry","bamboo","crimson","warped","pale_oak"];
-function isWoodRelatedCatalogItem(item) {
-  const raw = item.id.replace(/^minecraft:/, "");
-  if (WOOD_FAMILIES.some(type =>
-    raw.startsWith(type + "_") ||
-    raw.startsWith("stripped_" + type + "_") ||
-    raw.includes("_" + type + "_")
-  )) return true;
-  return /^(wooden_|stick$|bowl$|chest$|trapped_chest$|crafting_table$|barrel$|bookshelf$|lectern$|jukebox$|note_block$|ladder$|scaffolding$|composter$|cartography_table$|fletching_table$|smithing_table$|loom$|campfire$|soul_campfire$|chest_boat$)/.test(raw);
-}
-function normalizeSearchText(value) {
-  return String(value ?? "").toLocaleLowerCase("de-DE").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-}
 async function showBuySearchResults(player, query, page) {
-  const normalizedQuery = normalizeSearchText(query);
-  const woodQuery = ["holz", "wood", "wooden", "bretter", "planks", "holzblock", "holzblöcke"].some(term => normalizedQuery.includes(normalizeSearchText(term)));
   const matches = allBuyEntries().filter(item =>
-    normalizeSearchText(item.name).includes(normalizedQuery) ||
-    normalizeSearchText(item.id).includes(normalizedQuery) ||
-    normalizeSearchText(item.category).includes(normalizedQuery) ||
-    normalizeSearchText(item.group).includes(normalizedQuery) ||
-    (woodQuery && isWoodRelatedCatalogItem(item))
+    item.name.toLocaleLowerCase("de-DE").includes(query) ||
+    item.id.toLowerCase().includes(query) ||
+    item.category.toLocaleLowerCase("de-DE").includes(query) ||
+    item.group.toLocaleLowerCase("de-DE").includes(query)
   );
   if (!matches.length) {
     tell(player, "Keine Gegenstände für „" + query + "“ gefunden.");
@@ -894,7 +631,7 @@ async function showBuySearchResults(player, query, page) {
   const form = new ActionFormData().title("§l§bSUCHERGEBNISSE")
     .body("§7Suchbegriff: §f" + query + "\n§7Treffer: §f" + matches.length + " §8| §7Seite " + (page + 1) + "/" + Math.ceil(matches.length / pageSize) + "\n§7Warenkorb: §e" + getBuyCart(player).size + " Items – " + formatMoney(cartTotal(getBuyCart(player))));
   for (const item of shown) {
-    form.button(item.name + "\n§a" + formatMoney(getPriceCents(item.id, "buy", item.basePrice)) + " §8| §7" + item.category, itemIconPath(item.id));
+    form.button(item.name + "\n§a" + formatMoney(getPriceCents(item.id, "buy", item.basePrice)) + " §8| §7" + item.category);
   }
   if (start + pageSize < matches.length) form.button("§eWeitere Ergebnisse");
   form.button("§6🛒 Warenkorb öffnen");
@@ -937,7 +674,7 @@ async function openBuyItems(player, category, group) {
     .body("§7Wähle einen Gegenstand, um eine Menge hinzuzufügen.\n§7Warenkorb: §e" + cart.size + " Items – " + formatMoney(cartTotal(cart)));
   for (const [id, name, basePrice] of group.items) {
     const inCart = cart.get(id)?.qty ?? 0;
-    form.button(name + "\n§a" + formatMoney(getPriceCents(id, "buy", basePrice)) + " / Stück" + (inCart ? " §e| Im Korb: " + inCart : ""), itemIconPath(id));
+    form.button(name + "\n§a" + formatMoney(getPriceCents(id, "buy", basePrice)) + " / Stück" + (inCart ? " §e| Im Korb: " + inCart : ""));
   }
   form.button("§6🛒 Warenkorb öffnen");
   form.button("§7Zurück");
@@ -954,84 +691,16 @@ async function purchaseBuyEntry(player, entry, returnTo) {
 }
 
 async function openSellCategories(player) {
-  buildCompleteCatalog();
-  const form = new ActionFormData().title("§l§cITEMS VERKAUFEN")
-    .body("§7Wähle eine Kategorie oder suche direkt im gesamten Verkaufskatalog.")
-    .button("§b🔎 Gegenstände suchen\n§7Alle Verkaufsartikel durchsuchen");
+  const form = new ActionFormData().title("§l§cITEMS VERKAUFEN").body("§7Wähle eine Hauptkategorie.");
   for (const category of SELL_CATEGORIES) form.button("§e" + category.name);
   form.button("§7Zurück");
   const res = await form.show(player);
-  if (res.canceled || res.selection === SELL_CATEGORIES.length + 1) return openShop(player);
-  if (res.selection === 0) return openSellSearch(player);
-  const category = SELL_CATEGORIES[res.selection - 1];
+  if (res.canceled || res.selection === SELL_CATEGORIES.length) return openShop(player);
+  const category = SELL_CATEGORIES[res.selection];
   if (category) return openSellSubcategories(player, category);
   return openSellCategories(player);
 }
 
-function allSellEntries() {
-  const entries = [];
-  const seen = new Set();
-  for (const category of SELL_CATEGORIES) {
-    for (const group of category.groups) {
-      for (const [id, name, basePrice] of group.items) {
-        if (seen.has(id)) continue;
-        seen.add(id);
-        entries.push({ id, name, basePrice, category: category.name, group: group.name });
-      }
-    }
-  }
-  return entries;
-}
-async function openSellSearch(player) {
-  buildCompleteCatalog();
-  const modal = new ModalFormData().title("§l§bGEGENSTÄNDE SUCHEN")
-    .textField("Suchbegriff (Name oder ID)", "z. B. Diamant, Eiche, minecraft:stone", { defaultValue: "" });
-  const res = await modal.show(player);
-  if (res.canceled) return openSellCategories(player);
-  const query = String(res.formValues?.[0] ?? "").trim().toLocaleLowerCase("de-DE");
-  if (!query) { tell(player, "Bitte gib einen Suchbegriff ein."); return openSellSearch(player); }
-  return showSellSearchResults(player, query, 0);
-}
-async function showSellSearchResults(player, query, page) {
-  const normalizedQuery = normalizeSearchText(query);
-  const woodQuery = ["holz", "wood", "wooden", "bretter", "planks", "holzblock", "holzblöcke"].some(term => normalizedQuery.includes(normalizeSearchText(term)));
-  const matches = allSellEntries().filter(item =>
-    normalizeSearchText(item.name).includes(normalizedQuery) ||
-    normalizeSearchText(item.id).includes(normalizedQuery) ||
-    normalizeSearchText(item.category).includes(normalizedQuery) ||
-    normalizeSearchText(item.group).includes(normalizedQuery) ||
-    (woodQuery && isWoodRelatedCatalogItem(item))
-  );
-  if (!matches.length) {
-    tell(player, "Keine Gegenstände für „" + query + "“ gefunden.");
-    return openSellSearch(player);
-  }
-  const pageSize = 30;
-  const start = page * pageSize;
-  const shown = matches.slice(start, start + pageSize);
-  const form = new ActionFormData().title("§l§cSUCHERGEBNISSE")
-    .body("§7Suchbegriff: §f" + query + "\n§7Treffer: §f" + matches.length + " §8| §7Seite " + (page + 1) + "/" + Math.ceil(matches.length / pageSize));
-  for (const item of shown) {
-    const owned = countItem(player, item.id);
-    form.button(item.name + "\n§c" + formatMoney(getPriceCents(item.id, "sell", item.basePrice)) + " / Stück §8| §7Besitz: " + owned, itemIconPath(item.id));
-  }
-  if (start + pageSize < matches.length) form.button("§eWeitere Ergebnisse");
-  form.button("§bNeue Suche");
-  form.button("§7Zurück zu Kategorien");
-  const res = await form.show(player);
-  if (res.canceled) return openSellCategories(player);
-  if (res.selection < shown.length) {
-    const item = shown[res.selection];
-    return sellCatalogEntry(player, item, () => showSellSearchResults(player, query, page));
-  }
-  let action = res.selection - shown.length;
-  if (start + pageSize < matches.length) {
-    if (action === 0) return showSellSearchResults(player, query, page + 1);
-    action--;
-  }
-  if (action === 0) return openSellSearch(player);
-  return openSellCategories(player);
-}
 async function openSellSubcategories(player, category) {
   const form = new ActionFormData().title("§l§e" + category.name.toUpperCase()).body("§7Wähle einen Unterbereich.");
   for (const group of category.groups) form.button(group.name);
@@ -1043,137 +712,75 @@ async function openSellSubcategories(player, category) {
   return openSellSubcategories(player, category);
 }
 
-async function sellCatalogEntry(player, item, returnTo) {
-  const { id, name, basePrice } = item;
-  const owned = countItem(player, id);
-  if (owned < 1) {
-    tell(player, "Du besitzt keinen Gegenstand: " + name + ".");
-    return returnTo();
-  }
-  const modal = new ModalFormData().title("§l§c" + name)
-    .textField("Verkaufsmenge (Besitz: " + owned + ") – " + formatMoney(getPriceCents(id, "sell", basePrice)) + " pro Stück", "Anzahl", { defaultValue: String(owned) });
-  const amountResult = await modal.show(player);
-  if (amountResult.canceled) return returnTo();
-  const raw = String(amountResult.formValues?.[0] ?? "0").trim();
-  const qty = raw === "" ? 0 : Number(raw);
-  if (!Number.isInteger(qty) || qty < 1 || qty > owned) {
-    tell(player, "Ungültige Verkaufsmenge. Du besitzt " + owned + " " + name + ".");
-    return returnTo();
-  }
-  if (countItem(player, id) < qty || !removeItems(player, id, qty)) {
-    tell(player, "Nicht genügend " + name + " im Inventar.");
-    return returnTo();
-  }
-  const total = getPriceCents(id, "sell", basePrice) * qty;
-  setBalance(player.id, balance(player) + total);
-  tell(player, "Verkauf abgeschlossen: " + qty + "× " + name + " für " + formatMoney(total) + ".");
-  return returnTo();
-}
 async function openSellItems(player, category, group) {
-  const form = new ActionFormData().title("§l§c" + group.name.toUpperCase())
-    .body("§7Wähle einen Gegenstand zum Verkaufen.");
-  for (const [id, name, basePrice] of group.items) {
-    const owned = countItem(player, id);
-    form.button(name + "\n§c" + formatMoney(getPriceCents(id, "sell", basePrice)) + " / Stück §8| §7Besitz: " + owned, itemIconPath(id));
+  const form = new ModalFormData().title("§l§c" + group.name.toUpperCase());
+  const ownedAmounts = group.items.map(([id]) => countItem(player, id));
+  for (let i = 0; i < group.items.length; i++) {
+    const [id, name, basePrice] = group.items[i];
+    form.textField(name + " – " + formatMoney(getPriceCents(id, "sell", basePrice)) + " / Stück (Besitz: " + ownedAmounts[i] + ")", "Anzahl", "0");
   }
-  form.button("§7Zurück");
   const res = await form.show(player);
-  if (res.canceled || res.selection === group.items.length) return openSellSubcategories(player, category);
-  const entry = group.items[res.selection];
-  if (!entry) return openSellItems(player, category, group);
-  const [id, name, basePrice] = entry;
-  return sellCatalogEntry(player, { id, name, basePrice }, () => openSellItems(player, category, group));
+  if (res.canceled) return openSellSubcategories(player, category);
+  const requested = [];
+  for (let i = 0; i < group.items.length; i++) {
+    const [id, name, basePrice] = group.items[i];
+    const raw = String(res.formValues?.[i] ?? "0").trim();
+    const qty = raw === "" ? 0 : Number(raw);
+    if (!Number.isInteger(qty) || qty < 0 || qty > ownedAmounts[i]) {
+      tell(player, "Ungültige Verkaufsmenge für " + name + ". Du besitzt " + ownedAmounts[i] + ".");
+      return openSellItems(player, category, group);
+    }
+    if (qty > 0) requested.push({ id, name, qty, basePrice });
+  }
+  if (!requested.length) { tell(player, "Du hast keine Verkaufsmenge eingegeben."); return openSellItems(player, category, group); }
+  for (const item of requested) {
+    if (countItem(player, item.id) < item.qty) {
+      tell(player, "Nicht genügend " + item.name + " im Inventar.");
+      return openSellItems(player, category, group);
+    }
+  }
+  let total = 0;
+  for (const item of requested) {
+    if (!removeItems(player, item.id, item.qty)) {
+      tell(player, "Verkauf abgebrochen: " + item.name + " konnte nicht entnommen werden.");
+      return openSellItems(player, category, group);
+    }
+    total += getPriceCents(item.id, "sell", item.basePrice) * item.qty;
+  }
+  setBalance(player.id, balance(player) + total);
+  tell(player, "Verkauf abgeschlossen: " + requested.length + " verschiedene Gegenstände für " + formatMoney(total) + ".");
+  return openSellItems(player, category, group);
 }
+
+
 async function openAdminMenu(player) {
   const form = new ActionFormData().title("§l§cBAZAAR-ADMIN")
-    .body("§7Spawn-Eier und Mobspawner sind nur hier verfügbar. Preise werden dauerhaft gespeichert.")
-    .button("§aAdmin: Kaufen\n§7Spawn-Eier und Mobspawner")
-    .button("§cAdmin: Verkaufen\n§7Spawn-Eier und Mobspawner")
+    .body("§7Preise werden dauerhaft in den Weltdaten gespeichert.")
     .button("§aKaufpreise bearbeiten\n§7Server-Shop")
     .button("§eVerkaufspreise bearbeiten\n§7Verkaufskatalog")
     .button("§7Schließen");
   const res = await form.show(player);
-  if (res.canceled || res.selection === 4) return;
-  if (res.selection === 0) return openAdminSpecialItems(player, "buy");
-  if (res.selection === 1) return openAdminSpecialItems(player, "sell");
-  if (res.selection === 2) return openAdminBuyPrices(player);
-  if (res.selection === 3) return openAdminSellCategories(player);
-}
-
-function getAdminSpecialItems() {
-  const result = [];
-  let all = [];
-  try { all = ItemTypes.getAll(); } catch {}
-  const seen = new Set();
-  for (const type of all) {
-    const id = type?.id;
-    if (typeof id !== "string" || !id.startsWith("minecraft:")) continue;
-    const raw = id.slice("minecraft:".length);
-    if (!raw.endsWith("_spawn_egg") && raw !== "mob_spawner" && raw !== "spawner") continue;
-    if (seen.has(id)) continue;
-    try { new ItemStack(id, 1); } catch { continue; }
-    seen.add(id);
-    const name = raw === "mob_spawner" || raw === "spawner" ? "Mobspawner" : catalogLabel(id);
-    const basePrice = raw === "mob_spawner" || raw === "spawner" ? 5000 : 250;
-    result.push([id, name, basePrice]);
-  }
-  return result.sort((a,b) => a[1].localeCompare(b[1], "de"));
-}
-
-async function openAdminSpecialItems(player, side) {
-  const items = getAdminSpecialItems();
-  if (!items.length) {
-    tell(player, "Spawn-Eier oder Mobspawner wurden von dieser Bedrock-Version nicht als verfügbare Items gemeldet.");
-    return openAdminMenu(player);
-  }
-  const title = side === "buy" ? "§l§aADMIN-KAUF" : "§l§cADMIN-VERKAUF";
-  const form = new ActionFormData().title(title)
-    .body("§7Nur über die Admin-Verwaltung verfügbar. §8(" + items.length + " Artikel)");
-  for (const [id, name, basePrice] of items) {
-    const price = getPriceCents(id, side, basePrice);
-    const suffix = side === "buy" ? "" : " §8| §7Besitz: " + countItem(player, id);
-    form.button(name + "\n" + (side === "buy" ? "§a" : "§c") + formatMoney(price) + " / Stück" + suffix, itemIconPath(id));
-  }
-  form.button("§7Zurück");
-  const res = await form.show(player);
-  if (res.canceled || res.selection === items.length) return openAdminMenu(player);
-  const [id, name, basePrice] = items[res.selection] ?? [];
-  if (!id) return openAdminSpecialItems(player, side);
-  if (side === "buy") return chooseBuyQuantity(player, [id, name, basePrice], () => openAdminSpecialItems(player, side));
-  return sellCatalogEntry(player, { id, name, basePrice }, () => openAdminSpecialItems(player, side));
+  if (res.canceled || res.selection === 2) return;
+  if (res.selection === 0) return openAdminBuyPrices(player);
+  if (res.selection === 1) return openAdminSellCategories(player);
 }
 
 async function editPrice(player, itemId, itemName, side, currentCents, returnTo) {
-  try {
-    while (true) {
-      const modal = new ModalFormData().title("Preis bearbeiten")
-        .textField(
-          itemName + " – " + (side === "buy" ? "Kaufpreis" : "Verkaufspreis") + " in Euro (€)",
-          "z. B. 12,50",
-          { defaultValue: formatMoney(currentCents) }
-        );
-      const res = await modal.show(player);
-      if (res.canceled) return await returnTo();
-
-      const rawValue = res.formValues?.[0];
-      const cents = parseMoneyToCents(rawValue);
-      if (!Number.isSafeInteger(cents) || cents < 0 || cents > 100000000) {
-        tell(player, "Ungültiger Preis. Bitte z. B. 12,50 eingeben (0 bis 1.000.000 €).");
-        continue;
-      }
-
-      setPriceCents(itemId, side, cents);
-      tell(player, (side === "buy" ? "Kaufpreis" : "Verkaufspreis") + " für " + itemName + " auf " + formatMoney(cents) + " gesetzt.");
-      return await returnTo();
-    }
-  } catch (error) {
-    tell(player, "Preis konnte nicht gespeichert werden: " + (error?.message ?? String(error)));
-    try { return await returnTo(); } catch {}
+  const modal = new ModalFormData().title("Preis bearbeiten")
+    .textField(itemName + " – " + (side === "buy" ? "Kaufpreis" : "Verkaufspreis") + " in Euro (€)", "z. B. 12,50 €", formatMoney(currentCents));
+  const res = await modal.show(player);
+  if (res.canceled) return returnTo();
+  const cents = parseMoneyToCents(res.formValues?.[0]);
+  if (!Number.isInteger(cents) || cents < 0 || cents > 100000000) {
+    tell(player, "Ungültiger Preis. Bitte z. B. 12,50 eingeben (0 bis 1.000.000 €).");
+    return editPrice(player, itemId, itemName, side, currentCents, returnTo);
   }
+  setPriceCents(itemId, side, cents);
+  tell(player, (side === "buy" ? "Kaufpreis" : "Verkaufspreis") + " für " + itemName + " auf " + formatMoney(cents) + " gesetzt.");
+  return returnTo();
 }
 
 async function openAdminBuyPrices(player) {
-  buildCompleteCatalog();
   const form = new ActionFormData().title("§l§aKAUFPREISE").body("§7Wähle eine Hauptkategorie.");
   for (const category of BUY_CATEGORIES) form.button(category.name);
   form.button("§7Zurück");
@@ -1198,7 +805,7 @@ async function openAdminBuyGroups(player, category) {
 async function openAdminBuyItems(player, category, group) {
   const form = new ActionFormData().title("§l§a" + group.name.toUpperCase()).body("§7Wähle einen Gegenstand.");
   for (const [id, name, basePrice] of group.items) {
-    form.button(name + "\n§a" + formatMoney(getPriceCents(id, "buy", basePrice)), itemIconPath(id));
+    form.button(name + "\n§a" + formatMoney(getPriceCents(id, "buy", basePrice)));
   }
   form.button("§7Zurück");
   const res = await form.show(player);
@@ -1210,7 +817,6 @@ async function openAdminBuyItems(player, category, group) {
 }
 
 async function openAdminSellCategories(player) {
-  buildCompleteCatalog();
   const form = new ActionFormData().title("§l§eVERKAUFSPREISE").body("§7Wähle eine Hauptkategorie.");
   for (const category of SELL_CATEGORIES) form.button(category.name);
   form.button("§7Zurück");
@@ -1235,7 +841,7 @@ async function openAdminSellGroups(player, category) {
 async function openAdminSellItems(player, category, group) {
   const form = new ActionFormData().title("§l§c" + group.name.toUpperCase())
     .body("§7Wähle den Gegenstand, dessen Verkaufspreis du ändern möchtest.");
-  for (const [id, name, basePrice] of group.items) form.button(name + "\n§c" + formatMoney(getPriceCents(id, "sell", basePrice)), itemIconPath(id));
+  for (const [id, name, basePrice] of group.items) form.button(name + "\n§c" + formatMoney(getPriceCents(id, "sell", basePrice)));
   form.button("§7Zurück");
   const res = await form.show(player);
   if (res.canceled || res.selection === group.items.length) return openAdminSellGroups(player, category);
@@ -1246,136 +852,53 @@ async function openAdminSellItems(player, category, group) {
 }
 
 async function openMarket(player) {
-  const allOffers = listings().filter(x => x && x.id);
-  const offers = allOffers.filter(x => x.sellerId !== player.id && !isAdminOnlyItem(x.itemId));
-  const ownCount = allOffers.filter(x => x.sellerId === player.id).length;
+  const offers = listings().filter(x => x && x.id && x.sellerId !== player.id);
   const form = new ActionFormData().title("§l§bSPIELER-MARKTPLATZ")
     .body("§7Angebote anderer Spieler. Dein Guthaben: §6" + formatMoney(balance(player)));
-  for (const offer of offers.slice(0, 23)) {
-    const hasDiscount = Number(offer.discountThreshold) > 0 && Number(offer.discountPercent) > 0;
-    const discountLine = hasDiscount ? "\n§a" + offer.discountPercent + "% Rabatt ab " + offer.discountThreshold + " Stück" : "";
-    form.button(offer.itemName + " ×" + offer.amount + "\n§6" + formatMoney(offer.price) + " §8| §7von " + offer.sellerName + discountLine, itemIconPath(offer.itemId));
-  }
+  for (const offer of offers.slice(0, 25)) form.button(offer.itemName + " ×" + offer.amount + "\n§6" + formatMoney(offer.price) + " §8| §7von " + offer.sellerName);
   form.button("§aEigenes Item anbieten");
-  form.button("§eMeine Angebote (" + ownCount + ")");
-  form.button("§7Zurück");
+  form.button("Zurück");
   const res = await form.show(player);
   if (res.canceled) return;
-  if (res.selection < Math.min(offers.length, 23)) {
-    const offer = offers[res.selection];
-    if (!offer) return openMarket(player);
-    const discountApplies = Number(offer.discountThreshold) > 0 &&
-      Number(offer.discountPercent) > 0 && offer.amount >= offer.discountThreshold;
-    const discountPercent = discountApplies ? Math.min(90, Math.max(0, Number(offer.discountPercent))) : 0;
-    const finalPrice = Math.max(1, Math.round(offer.price * (100 - discountPercent) / 100));
-    const discountText = discountPercent ? "\n§aMengenrabatt: " + discountPercent + "% (du sparst " + formatMoney(offer.price - finalPrice) + ")" : "";
-    const confirm = new MessageFormData().title("Angebot kaufen")
-      .body(offer.amount + "× " + offer.itemName + " von " + offer.sellerName + " für " + formatMoney(finalPrice) + " kaufen?" + discountText)
-      .button1("Kaufen").button2("Abbrechen");
-    const c = await confirm.show(player);
-    if (c.canceled || c.selection !== 0) return openMarket(player);
-    const current = listings();
-    const idx = current.findIndex(x => x.id === offer.id);
-    if (idx < 0) { tell(player, "Dieses Angebot ist nicht mehr verfügbar."); return openMarket(player); }
-    if (balance(player) < finalPrice) { tell(player, "Du hast nicht genug Guthaben."); return openMarket(player); }
-    if (!canFitItem(player, offer.itemId, offer.amount)) { tell(player, "Dein Inventar ist voll."); return openMarket(player); }
-    const buyerBalanceBefore = balance(player);
-    const sellerBalanceBefore = accounts()[offer.sellerId] ?? 0;
-    if (!addItem(player, offer.itemId, offer.amount)) { tell(player, "Dein Inventar ist voll."); return openMarket(player); }
-    current.splice(idx, 1);
-    try {
-      setBalance(player.id, buyerBalanceBefore - finalPrice);
-      setBalance(offer.sellerId, sellerBalanceBefore + finalPrice);
-      writeJson(LISTINGS_KEY, current);
-    } catch (error) {
-      removeItems(player, offer.itemId, offer.amount);
-      try {
-        setBalance(player.id, buyerBalanceBefore);
-        setBalance(offer.sellerId, sellerBalanceBefore);
-        writeJson(LISTINGS_KEY, listings());
-      } catch {}
-      tell(player, "Kauf konnte nicht sicher gespeichert werden. Ware und Guthaben wurden zurückgesetzt.");
-      return openMarket(player);
-    }
-    tell(player, "Angebot gekauft. " + formatMoney(finalPrice) + " wurden überwiesen.");
-    return openMarket(player);
-  }
-  if (res.selection === Math.min(offers.length, 23)) return createListing(player);
-  if (res.selection === Math.min(offers.length, 23) + 1) return openMyListings(player);
-  return openMain(player);
-}
-async function openMyListings(player) {
-  const own = listings().filter(x => x && x.id && x.sellerId === player.id);
-  const form = new ActionFormData().title("§l§eMEINE ANGEBOTE")
-    .body(own.length ? "§7Wähle ein Angebot aus, das du zurücknehmen möchtest. Die Ware wird dir zurückgegeben." : "§7Du hast momentan keine aktiven Angebote.");
-  for (const offer of own.slice(0, 25)) {
-    const hasDiscount = Number(offer.discountThreshold) > 0 && Number(offer.discountPercent) > 0;
-    const discountLine = hasDiscount ? "\n§a" + offer.discountPercent + "% Rabatt ab " + offer.discountThreshold + " Stück" : "";
-    form.button(offer.itemName + " ×" + offer.amount + "\n§6" + formatMoney(offer.price) + discountLine, itemIconPath(offer.itemId));
-  }
-  form.button("§7Zurück");
-  const res = await form.show(player);
-  if (res.canceled || res.selection === own.slice(0, 25).length) return openMarket(player);
-  const offer = own[res.selection];
-  if (!offer) return openMyListings(player);
-  const confirm = new MessageFormData().title("Angebot zurücknehmen")
-    .body(offer.amount + "× " + offer.itemName + " zurücknehmen und ins Inventar legen?")
-    .button1("Zurücknehmen").button2("Abbrechen");
+  if (res.selection === offers.slice(0,25).length) return createListing(player);
+  if (res.selection === offers.slice(0,25).length + 1) return openMain(player);
+  const offer = offers[res.selection];
+  if (!offer) return openMarket(player);
+  const confirm = new MessageFormData().title("Angebot kaufen").body(offer.amount + "× " + offer.itemName + " von " + offer.sellerName + " für " + formatMoney(offer.price) + " kaufen?")
+    .button1("Kaufen").button2("Abbrechen");
   const c = await confirm.show(player);
-  if (c.canceled || c.selection !== 0) return openMyListings(player);
+  if (c.canceled || c.selection !== 0) return openMarket(player);
   const current = listings();
-  const idx = current.findIndex(x => x.id === offer.id && x.sellerId === player.id);
-  if (idx < 0) { tell(player, "Dieses Angebot ist nicht mehr verfügbar."); return openMyListings(player); }
-  if (!canFitItem(player, offer.itemId, offer.amount)) {
-    tell(player, "Dein Inventar hat nicht genug Platz. Räume zuerst etwas frei.");
-    return openMyListings(player);
-  }
+  const idx = current.findIndex(x => x.id === offer.id);
+  if (idx < 0) { tell(player, "Dieses Angebot ist nicht mehr verfügbar."); return openMarket(player); }
+  if (balance(player) < offer.price) { tell(player, "Du hast nicht genug Guthaben."); return openMarket(player); }
+  if (!addItem(player, offer.itemId, offer.amount)) { tell(player, "Dein Inventar ist voll."); return openMarket(player); }
+  setBalance(player.id, balance(player) - offer.price);
+  setBalance(offer.sellerId, (accounts()[offer.sellerId] ?? 0) + offer.price);
   current.splice(idx, 1);
-  try {
-    writeJson(LISTINGS_KEY, current);
-    if (!addItem(player, offer.itemId, offer.amount)) {
-      const restored = listings();
-      restored.push(offer);
-      writeJson(LISTINGS_KEY, restored);
-      tell(player, "Die Ware konnte nicht zurückgegeben werden. Das Angebot wurde wiederhergestellt.");
-      return openMyListings(player);
-    }
-  } catch {
-    tell(player, "Das Angebot konnte nicht zurückgenommen werden.");
-    return openMyListings(player);
-  }
-  tell(player, "Angebot zurückgenommen. " + offer.amount + "× " + offer.itemName + " sind wieder in deinem Inventar.");
-  return openMyListings(player);
+  writeJson(LISTINGS_KEY, current);
+  tell(player, "Angebot gekauft. " + formatMoney(offer.price) + " wurden überwiesen.");
+  return openMarket(player);
 }
 async function createListing(player) {
   const inv = player.getComponent("minecraft:inventory")?.container;
   const held = inv?.getItem(player.selectedSlotIndex);
   if (!held) { tell(player, "Halte das Item, das du anbieten möchtest, in der Hand."); return openMarket(player); }
   const itemId = held.typeId;
-  if (isAdminOnlyItem(itemId)) { tell(player, "Spawn-Eier und Mobspawner sind dem Admin-Kauf und -Verkauf vorbehalten."); return openMarket(player); }
   const itemName = held.nameTag || itemId.replace("minecraft:", "").replaceAll("_", " ");
   const modal = new ModalFormData().title("Item anbieten")
-    .textField("Anzahl (max. 64)", "z. B. 1", { defaultValue: String(held.amount) })
-    .textField("Gesamtpreis in Euro (€)", "z. B. 12,50 €", { defaultValue: "10,00 €" })
-    .textField("Mengenrabatt ab Stück (0 = kein Rabatt)", "z. B. 16", { defaultValue: "0" })
-    .textField("Rabatt in Prozent (0–90)", "z. B. 10", { defaultValue: "0" });
+    .textField("Anzahl (max. 64)", "z. B. 1", String(held.amount))
+    .textField("Gesamtpreis in Euro (€)", "z. B. 12,50 €", "10,00 €");
   const res = await modal.show(player);
   if (res.canceled) return openMarket(player);
   const amount = Math.floor(Number(res.formValues?.[0]));
   const price = parseMoneyToCents(res.formValues?.[1]);
-  const discountThreshold = Math.floor(Number(res.formValues?.[2]));
-  const discountPercent = Math.floor(Number(res.formValues?.[3]));
-  if (!Number.isInteger(amount) || amount < 1 || amount > held.amount || amount > 64 ||
-      !Number.isInteger(price) || price < 1 ||
-      !Number.isInteger(discountThreshold) || discountThreshold < 0 || discountThreshold > amount ||
-      !Number.isInteger(discountPercent) || discountPercent < 0 || discountPercent > 90 ||
-      ((discountThreshold === 0) !== (discountPercent === 0))) {
-    tell(player, "Ungültige Anzahl, Preis oder Rabatt. Für keinen Rabatt beide Rabattfelder auf 0 setzen.");
-    return openMarket(player);
+  if (!Number.isInteger(amount) || amount < 1 || amount > held.amount || amount > 64 || !Number.isInteger(price) || price < 1) {
+    tell(player, "Ungültige Anzahl oder Preis."); return openMarket(player);
   }
   if (!removeItems(player, itemId, amount)) { tell(player, "Item konnte nicht entnommen werden."); return openMarket(player); }
   const all = listings();
-  all.push({ id: String(Date.now()) + "-" + player.id, sellerId: player.id, sellerName: player.name, itemId, itemName, amount, price, discountThreshold, discountPercent });
+  all.push({ id: String(Date.now()) + "-" + player.id, sellerId: player.id, sellerName: player.name, itemId, itemName, amount, price });
   try { writeJson(LISTINGS_KEY, all); tell(player, "Dein Angebot wurde eingestellt."); }
   catch { addItem(player, itemId, amount); tell(player, "Marktplatz voll – Item zurückgegeben."); }
   return openMarket(player);
@@ -1420,12 +943,12 @@ system.beforeEvents.startup.subscribe(({ customCommandRegistry }) => {
   customCommandRegistry.registerCommand(
     {
       name: "survivalbazaar:admin",
-      description: "Öffnet die Admin-Verwaltung des Survival Bazaar (nur für Operatoren).",
+      description: "Öffnet die geschützte Admin-Verwaltung des Survival Bazaar.",
       permissionLevel: CommandPermissionLevel.Admin,
       cheatsRequired: false
     },
     (origin) => {
-      const player = origin.initiator ?? origin.sourceEntity;
+      const player = origin.sourceEntity;
       if (!(player instanceof Player)) {
         return { status: CustomCommandStatus.Failure, message: "Dieser Befehl kann nur von Spielern verwendet werden." };
       }
@@ -1439,7 +962,7 @@ world.afterEvents.playerSpawn.subscribe(ev => {
     const p = ev.player;
     system.runTimeout(() => {
       const money = balance(p);
-      tell(p, "Willkommen! Dein Startguthaben: " + formatMoney(money) + ". Befehle: /survivalbazaar:market oder /survivalbazaar:shop; Admins: /survivalbazaar:admin.");
+      tell(p, "Willkommen! Dein Startguthaben: " + formatMoney(money) + ". Befehle: /market oder /shop; Admins: /admin.");
     }, 40);
   }
 });
@@ -1449,5 +972,4 @@ world.afterEvents.worldLoad.subscribe(() => {
   if (typeof world.getDynamicProperty(ACCOUNTS_KEY) !== "string") writeJson(ACCOUNTS_KEY, {});
   if (typeof world.getDynamicProperty(LISTINGS_KEY) !== "string") writeJson(LISTINGS_KEY, []);
   if (typeof world.getDynamicProperty(PRICES_KEY) !== "string") writeJson(PRICES_KEY, {});
-  if (typeof world.getDynamicProperty(DIRECT_TRADES_KEY) !== "string") writeJson(DIRECT_TRADES_KEY, []);
 });

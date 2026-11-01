@@ -6,7 +6,7 @@
         "identifier": "geometry.survivalbazaar.wardrobe",
         "texture_width": 16,
         "texture_height": 16,
-        "visible_bounds_width": 1.5,
+        "visible_bounds_width": 2,
         "visible_bounds_height": 2,
         "visible_bounds_offset": [
           0,
@@ -18,16 +18,16 @@
         {
           "name": "root",
           "pivot": [
+            8,
             0,
-            0,
-            0
+            8
           ],
           "cubes": [
             {
               "origin": [
-                -6,
+                2,
                 0,
-                -5
+                3
               ],
               "size": [
                 12,
@@ -41,9 +41,9 @@
             },
             {
               "origin": [
-                -5,
+                3,
                 2,
-                -6
+                2
               ],
               "size": [
                 4,
@@ -57,9 +57,9 @@
             },
             {
               "origin": [
-                1,
+                9,
                 2,
-                -6
+                2
               ],
               "size": [
                 4,
@@ -73,9 +73,9 @@
             },
             {
               "origin": [
-                -1,
                 7,
-                -7
+                7,
+                1
               ],
               "size": [
                 1,
