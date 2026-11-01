@@ -459,7 +459,7 @@ const CUSTOM_ITEM_ICONS = {
  "survivalbazaar:floor_lamp":"textures/blocks/tv","survivalbazaar:armchair":"textures/blocks/chair",
  "survivalbazaar:bar_counter":"textures/blocks/bar_counter","survivalbazaar:bar_stool":"textures/blocks/bar_stool",
  "survivalbazaar:grandfather_clock":"textures/blocks/grandfather_clock","survivalbazaar:hanging_guitar":"textures/blocks/hanging_guitar",
- "survivalbazaar:potted_plant":"textures/blocks/potted_plant","survivalbazaar:wall_shelf":"textures/blocks/wall_shelf"
+ "survivalbazaar:potted_plant":"textures/blocks/potted_plant","survivalbazaar:wall_shelf":"textures/blocks/wall_shelf","minecraft:mob_spawner":"textures/blocks/mob_spawner"
 };
 function itemIconPath(id) {
  if (CUSTOM_ITEM_ICONS[id]) return CUSTOM_ITEM_ICONS[id];
@@ -743,7 +743,7 @@ async function openSellItems(player, category, group) {
   const res=await form.show(player);
   if(res.canceled||res.selection===group.items.length) return openSellSubcategories(player,category);
   const entry=group.items[res.selection];
-  if(entry) return chooseSellQuantity(player,entry,category,group,returnTo);
+  if(entry) return chooseSellQuantity(player,entry,category,group);
   return openSellItems(player,category,group);
 }
 async function chooseSellQuantity(player,entry,category,group,returnTo=()=>openSellItems(player,category,group)) {
