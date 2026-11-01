@@ -843,7 +843,7 @@ async function openAdminBuyGroups(player, category) {
 async function openAdminBuyItems(player, category, group) {
   const form = new ActionFormData().title("§l§a" + group.name.toUpperCase()).body("§7Wähle einen Gegenstand.");
   for (const [id, name, basePrice] of group.items) {
-    form.button(name + "\n§a" + formatMoney(getPriceCents(id, "buy", basePrice)));
+    form.button(name + "\n§a" + formatMoney(getPriceCents(id, "buy", basePrice)), itemIconPath(id));
   }
   form.button("§7Zurück");
   const res = await form.show(player);
