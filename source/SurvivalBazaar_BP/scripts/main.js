@@ -1006,21 +1006,8 @@ system.beforeEvents.startup.subscribe(({ customCommandRegistry }) => {
     }
   );
 
-  customCommandRegistry.registerCommand(
-    {
-      name: "sba:admin",
-      description: "Öffnet die geschützte Admin-Verwaltung des Survival Bazaar.",
-      permissionLevel: CommandPermissionLevel.Admin,
-      cheatsRequired: false
-    },
-    (origin) => {
-      const player = origin.sourceEntity;
-      if (!(player instanceof Player)) return { status: CustomCommandStatus.Failure, message: "Nur Spieler können diesen Befehl verwenden." };
-      system.run(() => openAdminMenu(player).catch(() => tell(player, "Admin-Menü konnte nicht geöffnet werden.")));
-      return { status: CustomCommandStatus.Success };
-    }
-  );
-
+  // Admin command: Minecraft also exposes the short chat alias /admin.
+  // Keep exactly one registration to avoid duplicate command conflicts.
   customCommandRegistry.registerCommand(
     {
       name: "survivalbazaar:admin",
@@ -1029,12 +1016,17 @@ system.beforeEvents.startup.subscribe(({ customCommandRegistry }) => {
       cheatsRequired: false
     },
     (origin) => {
-      const player = origin.sourceEntity;
+      const player = origin.initiator ?? origin.sourceEntity;
       if (!(player instanceof Player)) {
         return { status: CustomCommandStatus.Failure, message: "Dieser Befehl kann nur von Spielern verwendet werden." };
       }
-      system.run(() => openAdminMenu(player).catch(() => tell(player, "Admin-Menü konnte nicht geöffnet werden.")));
-      return { status: CustomCommandStatus.Success };
+      system.run(() => {
+        openAdminMenu(player).catch((error) => {
+          console.warn("[SurvivalBazaar] Admin-Menü konnte nicht geöffnet werden:", error);
+          tell(player, "Admin-Menü konnte nicht geöffnet werden. Bitte versuche es erneut.");
+        });
+      });
+      return { status: CustomCommandStatus.Success, message: "Admin-Verwaltung wird geöffnet." };
     }
   );
 });
@@ -1087,7 +1079,7 @@ world.afterEvents.playerSpawn.subscribe(ev => {
     const p = ev.player;
     system.runTimeout(() => {
       const money = balance(p);
-      tell(p, "Willkommen! Dein Startguthaben: " + formatMoney(money) + ". Befehle: /market oder /shop; Admins: /sba:admin (oder /survivalbazaar:admin).");
+      tell(p, "Willkommen! Dein Startguthaben: " + formatMoney(money) + ". Befehle: /market oder /shop; Admins: /admin.");
     }, 40);
   }
 });
