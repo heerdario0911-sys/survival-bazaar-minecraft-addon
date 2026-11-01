@@ -13,7 +13,7 @@
       },
       "minecraft:material_instances": {
         "*": {
-          "texture": "table",
+          "texture": "bookshelf",
           "render_method": "opaque"
         }
       },
