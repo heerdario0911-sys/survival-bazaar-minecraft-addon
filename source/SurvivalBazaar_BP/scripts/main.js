@@ -1095,9 +1095,11 @@ async function interactWithFurniture(player, block) {
     return;
   }
   if (id === "survivalbazaar:flat_tv" || id === "survivalbazaar:floor_lamp") {
-    data.on = !data.on;
-    writeFurnitureData(block, data);
-    tell(player, (id.endsWith("flat_tv") ? "Fernseher" : "Lampe") + (data.on ? " eingeschaltet." : " ausgeschaltet.") + " §7(Status gespeichert.)");
+    const current = block.permutation.getState("survivalbazaar:is_on") === true;
+    const next = !current;
+    block.setPermutation(block.permutation.withState("survivalbazaar:is_on", next));
+    tell(player, (id.endsWith("flat_tv") ? "Fernseher" : "Lampe") + (next ? " eingeschaltet." : " ausgeschaltet.") + (id.endsWith("floor_lamp") && next ? " §7Die Lampe spendet jetzt Licht." : ""));
+    try { player.playSound("random.click"); } catch {}
     return;
   }
   const labels = {
