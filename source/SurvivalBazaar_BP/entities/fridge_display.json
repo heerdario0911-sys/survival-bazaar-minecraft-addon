@@ -32,7 +32,23 @@
           }
         ]
       },
-      "minecraft:fire_immune": {}
+      "minecraft:fire_immune": {},
+      "minecraft:interact": {
+        "interactions": [
+          {
+            "interact_text": "action.interact.open",
+            "use_item": false,
+            "swing": false
+          }
+        ]
+      },
+      "minecraft:inventory": {
+        "container_type": "container",
+        "inventory_size": 27,
+        "private": true,
+        "restrict_to_owner": false,
+        "can_be_siphoned_from": false
+      }
     }
   }
 }

@@ -1158,29 +1158,133 @@ world.afterEvents.playerBreakBlock.subscribe(event => {
 });
 
 
+
+const furnitureTvStates = new Map();
+
+function getFridgeContainer(entity) {
+  try {
+    return entity.getComponent("minecraft:inventory")?.container;
+  } catch {
+    return undefined;
+  }
+}
+
+function openFridgeTransfer(player, entity, direction) {
+  try {
+    const fridge = getFridgeContainer(entity);
+    const playerInventory = player.getComponent("minecraft:inventory")?.container;
+    if (!fridge || !playerInventory) {
+      tell(player, "Der Kühlschrank-Inhalt konnte nicht geöffnet werden.");
+      return;
+    }
+    const source = direction === "deposit" ? playerInventory : fridge;
+    const target = direction === "deposit" ? fridge : playerInventory;
+    const entries = [];
+    for (let slot = 0; slot < source.size; slot++) {
+      const stack = source.getItem(slot);
+      if (stack) entries.push({ slot, label: stack.amount + "x " + stack.typeId.replace("minecraft:", "").replace(/_/g, " ") });
+    }
+    if (!entries.length) {
+      tell(player, direction === "deposit" ? "Dein Inventar enthält keine Gegenstände zum Einlagern." : "Der Kühlschrank ist leer.");
+      return;
+    }
+    const form = new ModalFormData()
+      .title(direction === "deposit" ? "§l§aKÜHLSCHRANK – EINLAGERN" : "§l§eKÜHLSCHRANK – ENTNEHMEN")
+      .dropdown("Gegenstand auswählen", entries.map(entry => entry.label), 0);
+    form.show(player).then(result => {
+      if (result.canceled || !player.isValid || !entity.isValid) return;
+      const selected = entries[Number(result.formValues?.[0] ?? 0)];
+      if (!selected) return;
+      const current = source.getItem(selected.slot);
+      if (!current) return;
+      const moving = current.clone();
+      const leftover = target.addItem(moving);
+      if (leftover) {
+        source.setItem(selected.slot, leftover);
+        tell(player, "Es war nicht genug Platz vorhanden. Der Rest bleibt im Ausgangsinventar.");
+      } else {
+        source.setItem(selected.slot, undefined);
+        tell(player, direction === "deposit" ? "Gegenstand im Kühlschrank eingelagert." : "Gegenstand aus dem Kühlschrank entnommen.");
+      }
+      system.run(() => openFridgeMenu(player, entity));
+    }).catch(error => {
+      console.warn("[SurvivalBazaar] Kühlschrank-Menü fehlgeschlagen:", error);
+      tell(player, "Das Kühlschrank-Menü konnte nicht geöffnet werden.");
+    });
+  } catch (error) {
+    console.warn("[SurvivalBazaar] Kühlschrank-Transfer fehlgeschlagen:", error);
+    tell(player, "Der Kühlschrank konnte gerade nicht benutzt werden.");
+  }
+}
+
+function openFridgeMenu(player, entity) {
+  if (!player.isValid || !entity.isValid) return;
+  const form = new ActionFormData()
+    .title("§l§aKÜHLSCHRANK")
+    .body("§7Dein persönlicher Stauraum mit 27 Plätzen.")
+    .button("§aGegenstände einlagern")
+    .button("§eGegenstände entnehmen")
+    .button("§cSchließen");
+  form.show(player).then(result => {
+    if (result.canceled) return;
+    if (result.selection === 0) openFridgeTransfer(player, entity, "deposit");
+    else if (result.selection === 1) openFridgeTransfer(player, entity, "withdraw");
+  }).catch(error => {
+    console.warn("[SurvivalBazaar] Kühlschrank-Menü fehlgeschlagen:", error);
+    tell(player, "Das Kühlschrank-Menü konnte nicht geöffnet werden.");
+  });
+}
+
 world.afterEvents.playerInteractWithEntity.subscribe(event => {
-  const config = DISPLAY_FURNITURE_BY_ENTITY[event.target.typeId];
-  if (config?.seat !== "bed") return;
-  const tag = event.target.getTags().find(value => value.startsWith("sb_anchor_"));
-  const match = tag?.match(/^sb_anchor_(-?\\d+)_(-?\\d+)_(-?\\d+)$/);
-  if (!match) return;
-  const blockPosition = { x: Number(match[1]), y: Number(match[2]), z: Number(match[3]) };
+  const player = event.player;
+  const entity = event.target;
+  const config = DISPLAY_FURNITURE_BY_ENTITY[entity.typeId];
+  if (!config) return;
   system.run(() => {
     try {
-      if (!event.player.isValid) return;
-      event.player.setSpawnPoint({
-        x: blockPosition.x + 0.5,
-        y: blockPosition.y + 0.5,
-        z: blockPosition.z + 0.5,
-        dimension: event.player.dimension
-      });
-      tell(event.player, "Dein persönlicher Spawnpunkt wurde am Doppelbett gesetzt.");
+      if (!player.isValid || !entity.isValid) return;
+      if (config.seat) {
+        const rideable = entity.getComponent("minecraft:rideable");
+        const added = rideable?.addRider(player) ?? false;
+        if (!added) {
+          tell(player, "Der Sitzplatz ist gerade belegt oder konnte nicht benutzt werden.");
+          return;
+        }
+        if (config.seat === "bed") {
+          const tag = entity.getTags().find(value => value.startsWith("sb_anchor_"));
+          const match = tag?.match(/^sb_anchor_(-?\\d+)_(-?\\d+)_(-?\\d+)$/);
+          if (match) {
+            player.setSpawnPoint({
+              x: Number(match[1]) + 0.5,
+              y: Number(match[2]) + 0.5,
+              z: Number(match[3]) + 0.5,
+              dimension: player.dimension
+            });
+          }
+          tell(player, "Du liegst jetzt im Doppelbett. Dein persönlicher Spawnpunkt wurde gesetzt. Zum Aufstehen springst du.");
+        } else {
+          tell(player, "Du sitzt jetzt auf dem Möbelstück. Zum Aufstehen springst du.");
+        }
+        return;
+      }
+      if (entity.typeId === "survivalbazaar:fridge_display") {
+        openFridgeMenu(player, entity);
+        return;
+      }
+      if (entity.typeId === "survivalbazaar:flat_tv_display") {
+        const next = !furnitureTvStates.get(entity.id);
+        furnitureTvStates.set(entity.id, next);
+        player.onScreenDisplay.setActionBar(next ? "§eFernseher eingeschaltet." : "§7Fernseher ausgeschaltet.");
+        return;
+      }
+      tell(player, "Dieses Möbelstück wurde benutzt.");
     } catch (error) {
-      tell(event.player, "Der Spawnpunkt konnte nicht gesetzt werden. Bitte versuche es erneut.");
-      console.warn("[SurvivalBazaar] Bett-Interaktion fehlgeschlagen:", error);
+      console.warn("[SurvivalBazaar] Möbel-Interaktion fehlgeschlagen:", error);
+      tell(player, "Die Möbel-Interaktion ist fehlgeschlagen. Bitte versuche es erneut.");
     }
   });
 });
+
 
 
 world.afterEvents.playerSpawn.subscribe(ev => {

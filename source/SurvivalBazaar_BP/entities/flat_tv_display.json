@@ -32,7 +32,16 @@
           }
         ]
       },
-      "minecraft:fire_immune": {}
+      "minecraft:fire_immune": {},
+      "minecraft:interact": {
+        "interactions": [
+          {
+            "interact_text": "action.interact.open",
+            "use_item": false,
+            "swing": false
+          }
+        ]
+      }
     }
   }
 }

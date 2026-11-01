@@ -49,6 +49,15 @@
             "lock_rider_rotation": 0
           }
         ]
+      },
+      "minecraft:interact": {
+        "interactions": [
+          {
+            "interact_text": "action.interact.mount",
+            "use_item": false,
+            "swing": false
+          }
+        ]
       }
     }
   }
