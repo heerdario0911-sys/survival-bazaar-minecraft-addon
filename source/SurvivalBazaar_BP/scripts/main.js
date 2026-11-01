@@ -505,7 +505,7 @@ async function addToBuyCart(player, entry, qty, returnTo) {
 async function chooseBuyQuantity(player, entry, returnTo) {
   const [id, name] = entry;
   const modal = new ModalFormData().title("§l§a" + name)
-    .textField("Anzahl zum Warenkorb hinzufügen (1–64)", "z. B. 4", { defaultValue: "1" });
+    .textField("Anzahl zum Warenkorb hinzufügen (1–64)", "z. B. 4", "1");
   const res = await modal.show(player);
   if (res.canceled) return returnTo();
   const qty = Number(String(res.formValues?.[0] ?? "").trim());
@@ -527,7 +527,7 @@ async function openBuyBasket(player, returnTo = openBuyShop) {
   if (res.selection < entries.length) {
     const item = entries[res.selection];
     const modal = new ModalFormData().title("§l§e" + item.name)
-      .textField("Neue Menge (0 = entfernen, maximal 64)", "Anzahl", { defaultValue: String(item.qty) });
+      .textField("Neue Menge (0 = entfernen, maximal 64)", "Anzahl", String(item.qty));
     const edit = await modal.show(player);
     if (edit.canceled) return openBuyBasket(player, returnTo);
     const qty = Number(String(edit.formValues?.[0] ?? "").trim());
@@ -606,7 +606,7 @@ function allBuyEntries() {
 
 async function openBuySearch(player) {
   const modal = new ModalFormData().title("§l§bGEGENSTÄNDE SUCHEN")
-    .textField("Suchbegriff (Name oder ID)", "z. B. Diamant, Eiche, minecraft:stone", { defaultValue: "" });
+    .textField("Suchbegriff (Name oder ID)", "z. B. Diamant, Eiche, minecraft:stone", "");
   const res = await modal.show(player);
   if (res.canceled) return openBuyShop(player);
   const query = String(res.formValues?.[0] ?? "").trim().toLocaleLowerCase("de-DE");
@@ -717,7 +717,7 @@ async function openSellItems(player, category, group) {
   const ownedAmounts = group.items.map(([id]) => countItem(player, id));
   for (let i = 0; i < group.items.length; i++) {
     const [id, name, basePrice] = group.items[i];
-    form.textField(name + " – " + formatMoney(getPriceCents(id, "sell", basePrice)) + " / Stück (Besitz: " + ownedAmounts[i] + ")", "Anzahl", { defaultValue: "0" });
+    form.textField(name + " – " + formatMoney(getPriceCents(id, "sell", basePrice)) + " / Stück (Besitz: " + ownedAmounts[i] + ")", "Anzahl", "0");
   }
   const res = await form.show(player);
   if (res.canceled) return openSellSubcategories(player, category);
@@ -767,7 +767,7 @@ async function openAdminMenu(player) {
 
 async function editPrice(player, itemId, itemName, side, currentCents, returnTo) {
   const modal = new ModalFormData().title("Preis bearbeiten")
-    .textField(itemName + " – " + (side === "buy" ? "Kaufpreis" : "Verkaufspreis") + " in Euro (€)", "z. B. 12,50 €", { defaultValue: formatMoney(currentCents) });
+    .textField(itemName + " – " + (side === "buy" ? "Kaufpreis" : "Verkaufspreis") + " in Euro (€)", "z. B. 12,50 €", formatMoney(currentCents));
   const res = await modal.show(player);
   if (res.canceled) return returnTo();
   const cents = parseMoneyToCents(res.formValues?.[0]);
@@ -887,8 +887,8 @@ async function createListing(player) {
   const itemId = held.typeId;
   const itemName = held.nameTag || itemId.replace("minecraft:", "").replaceAll("_", " ");
   const modal = new ModalFormData().title("Item anbieten")
-    .textField("Anzahl (max. 64)", "z. B. 1", { defaultValue: String(held.amount) })
-    .textField("Gesamtpreis in Euro (€)", "z. B. 12,50 €", { defaultValue: "10,00 €" });
+    .textField("Anzahl (max. 64)", "z. B. 1", String(held.amount))
+    .textField("Gesamtpreis in Euro (€)", "z. B. 12,50 €", "10,00 €");
   const res = await modal.show(player);
   if (res.canceled) return openMarket(player);
   const amount = Math.floor(Number(res.formValues?.[0]));
