@@ -461,11 +461,28 @@ const CUSTOM_ITEM_ICONS = {
  "survivalbazaar:grandfather_clock":"textures/blocks/grandfather_clock","survivalbazaar:hanging_guitar":"textures/blocks/hanging_guitar",
  "survivalbazaar:potted_plant":"textures/blocks/potted_plant","survivalbazaar:wall_shelf":"textures/blocks/wall_shelf","minecraft:mob_spawner":"textures/blocks/mob_spawner"
 };
+const VANILLA_ICON_ALIASES = {
+ "cooked_beef":"beef_cooked","cooked_porkchop":"porkchop_cooked","cooked_chicken":"chicken_cooked",
+ "cooked_mutton":"mutton_cooked","cooked_rabbit":"rabbit_cooked","golden_apple":"apple_golden",
+ "enchanted_golden_apple":"apple_golden","baked_potato":"potato_baked","poisonous_potato":"potato_poisonous",
+ "melon_slice":"melon","raw_iron":"iron_ore","raw_gold":"gold_ore","raw_copper":"copper_ore",
+ "oak_log":"log_oak","spruce_log":"log_spruce","birch_log":"log_birch","jungle_log":"log_jungle",
+ "acacia_log":"log_acacia","dark_oak_log":"log_big_oak","mangrove_log":"log_mangrove","cherry_log":"log_cherry",
+ "oak_planks":"planks_oak","spruce_planks":"planks_spruce","birch_planks":"planks_birch",
+ "jungle_planks":"planks_jungle","acacia_planks":"planks_acacia","dark_oak_planks":"planks_big_oak",
+ "mangrove_planks":"planks_mangrove","cherry_planks":"planks_cherry",
+ "oak_leaves":"leaves_oak","spruce_leaves":"leaves_spruce","birch_leaves":"leaves_birch",
+ "jungle_leaves":"leaves_jungle","acacia_leaves":"leaves_acacia","dark_oak_leaves":"leaves_big_oak",
+ "oak_sapling":"sapling_oak","spruce_sapling":"sapling_spruce","birch_sapling":"sapling_birch",
+ "jungle_sapling":"sapling_jungle","acacia_sapling":"sapling_acacia","dark_oak_sapling":"sapling_big_oak"
+};
 function itemIconPath(id) {
  if (CUSTOM_ITEM_ICONS[id]) return CUSTOM_ITEM_ICONS[id];
  const raw=String(id).replace(/^minecraft:/,"");
- const blockLike=/_block$|_log$|_wood$|_planks$|_ore$|_stone$|_bricks$|_wool$|_concrete$|_terracotta$|_glass$|_leaves$|_sapling$|_stairs$|_slab$|_fence$|_door$|_trapdoor$|_wall$|_bed$|_banner$|_carpet$|_candle$|_shulker_box$/.test(raw);
- return (blockLike?"textures/blocks/":"textures/items/")+raw;
+ const alias=VANILLA_ICON_ALIASES[raw]||raw;
+ const blockLike=catalogCategory(id)==="Blöcke und Baumaterial" ||
+  /_block$|_log$|_wood$|_planks$|_ore$|_stone$|_bricks$|_wool$|_concrete$|_terracotta$|_glass$|_leaves$|_sapling$|_stairs$|_slab$|_fence$|_door$|_trapdoor$|_wall$|_bed$|_banner$|_carpet$|_candle$|_shulker_box$|^torch$|^lantern$|^flower_pot$|^scaffolding$|^ladder$|^chain$|^iron_bars$/.test(raw);
+ return (blockLike?"textures/blocks/":"textures/items/")+alias;
 }
 
 async function openMain(player) {
