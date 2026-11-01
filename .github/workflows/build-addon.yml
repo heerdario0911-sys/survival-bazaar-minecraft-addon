@@ -60,7 +60,49 @@ jobs:
               assert data.startswith(bytes([137,80,78,71,13,10,26,10])), f"Ungültige PNG: {path}"
               w, h = struct.unpack(">II", data[16:24])
               assert w > 1 and h > 1 and (len(data) > 200 or path.name in {"furniture_anchor.png", "bed.png", "chair.png", "fridge.png", "mirror.png", "sofa.png", "table.png", "tv.png"}), f"Platzhalter-/leere Textur: {path}"
-          print("JSON, 3D-Modelle, Texturzuordnungen und PNG-Dateien geprüft.")
+          # Loot-Tabellen, Atlas-Dateien und Block-Referenzen prüfen.
+          for path in (bp / "blocks").glob("*.json"):
+              block = json.loads(path.read_text())["minecraft:block"]
+              loot = block.get("components", {}).get("minecraft:loot")
+              if loot:
+                  assert (bp / loot).is_file(), f"Fehlende Loot-Tabelle: {path} -> {loot}"
+          for name, entry in atlas["texture_data"].items():
+              values = entry.get("textures")
+              values = values if isinstance(values, list) else [values]
+              for value in values:
+                  value = value if isinstance(value, str) else value.get("path")
+                  assert value and (rp / (value + ".png")).is_file(), f"Fehlende Atlas-Textur: {name} -> {value}"
+
+          # Jedes Behavior-Entity braucht ein passendes Client-Entity und Modell.
+          behavior_entities = {}
+          for path in (bp / "entities").glob("*.json"):
+              entity = json.loads(path.read_text())["minecraft:entity"]
+              identifier = entity["description"]["identifier"]
+              behavior_entities[identifier] = entity
+          entity_geometries = {}
+          for path in (rp / "models/entity").glob("*.geo.json"):
+              for geo in json.loads(path.read_text()).get("minecraft:geometry", []):
+                  entity_geometries[geo["description"]["identifier"]] = path
+          client_entities = {}
+          for path in (rp / "entity").glob("*.entity.json"):
+              desc = json.loads(path.read_text())["minecraft:client_entity"]["description"]
+              identifier = desc["identifier"]
+              client_entities[identifier] = desc
+              geometry = desc.get("geometry", {}).get("default")
+              assert geometry in entity_geometries, f"Fehlende Entity-Geometrie: {path} -> {geometry}"
+              texture = desc.get("textures", {}).get("default")
+              assert texture and (rp / (texture + ".png")).is_file(), f"Fehlende Entity-Textur: {path} -> {texture}"
+          assert set(behavior_entities) == set(client_entities), "Behavior-/Client-Entity-IDs stimmen nicht überein"
+          for identifier, entity in behavior_entities.items():
+              assert "minecraft:rideable" in entity.get("components", {}), f"Display-Entity nicht reitbar: {identifier}"
+
+          # Die im Shop gelisteten eigenen Möbel müssen als Blöcke existieren.
+          import re
+          script = (bp / "scripts/main.js").read_text(encoding="utf-8")
+          custom_shop_ids = set(re.findall(r'id:\\s*"(survivalbazaar:[a-z0-9_]+)"', script))
+          block_ids = {json.loads(p.read_text())["minecraft:block"]["description"]["identifier"] for p in (bp / "blocks").glob("*.json")}
+          assert custom_shop_ids <= block_ids, f"Shop-Möbel ohne Blockdefinition: {sorted(custom_shop_ids - block_ids)}"
+          print("JSON, Block-/Entity-IDs, Rideable-Entities, Loot-Tabellen, 3D-Modelle, Texturzuordnungen und PNG-Dateien geprüft.")
           PY
       - name: Behavior- und Resource-Pack paketieren
         run: |
