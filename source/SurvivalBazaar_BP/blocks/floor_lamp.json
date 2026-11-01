@@ -19,7 +19,7 @@
       },
       "minecraft:material_instances": {
         "*": {
-          "texture": "tv",
+          "texture": "floor_lamp",
           "render_method": "opaque"
         }
       },
