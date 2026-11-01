@@ -281,7 +281,7 @@ function buildCompleteCatalog() {
   const id = type?.id;
   if (typeof id !== "string" || !id.startsWith("minecraft:") || seen.has(id)) continue;
   const raw = id.slice("minecraft:".length);
-  if (technical.test(raw)) continue;
+  if (technical.test(raw) || raw.endsWith("_spawn_egg") || raw === "mob_spawner") continue;
   // Nur Einträge, die Bedrock als echtes Inventar-Item anlegen kann.
   try { new ItemStack(id, 1); } catch { continue; }
   const category = catalogCategory(id);
@@ -763,16 +763,55 @@ async function chooseSellQuantity(player,entry,category,group) {
   return openSellItems(player,category,group);
 }
 
+
+function adminSpecialItems() {
+ const found=[];
+ try {
+  for(const t of ItemTypes.getAll()) {
+   const id=t?.id;
+   if(typeof id!=="string"||!id.startsWith("minecraft:")) continue;
+   const raw=id.slice(10);
+   if(!(raw.endsWith("_spawn_egg")||raw==="mob_spawner")) continue;
+   try { new ItemStack(id,1); } catch { continue; }
+   const name=raw==="mob_spawner"?"Mob-Spawner":catalogLabel(id);
+   found.push([id,name,raw==="mob_spawner"?2500:100]);
+  }
+ } catch {}
+ if(!found.some(x=>x[0]==="minecraft:mob_spawner")) found.push(["minecraft:mob_spawner","Mob-Spawner",2500]);
+ return found.sort((a,b)=>a[1].localeCompare(b[1],"de"));
+}
+async function openAdminSpecialItems(player, side) {
+ const entries=adminSpecialItems();
+ const title=side==="buy"?"ADMIN-SHOP: SPAWN-EIER":"ADMIN-VERKAUF: SPAWN-EIER";
+ const form=new ActionFormData().title("§l§d"+title)
+  .body("§7Diese Gegenstände sind ausschließlich in der Admin-Verwaltung verfügbar.\n§7Wähle ein Item aus.");
+ for(const [id,name,price] of entries) {
+  const cents=getPriceCents(id,side,price);
+  form.button(name+"\n§6"+formatMoney(cents)+" / Stück",itemIconPath(id));
+ }
+ form.button("§7Zurück");
+ const res=await form.show(player);
+ if(res.canceled||res.selection===entries.length) return openAdminMenu(player);
+ const entry=entries[res.selection];
+ if(!entry)return openAdminSpecialItems(player,side);
+ if(side==="buy") return chooseBuyQuantity(player,entry,()=>openAdminSpecialItems(player,"buy"));
+ return chooseSellQuantity(player,entry,{name:"Admin-Sonderartikel",groups:[]},{name:"Spawn-Eier und Spawner",items:entries});
+}
+
 async function openAdminMenu(player) {
   const form = new ActionFormData().title("§l§cBAZAAR-ADMIN")
     .body("§7Preise werden dauerhaft in den Weltdaten gespeichert.")
     .button("§aKaufpreise bearbeiten\n§7Server-Shop")
     .button("§eVerkaufspreise bearbeiten\n§7Verkaufskatalog")
+    .button("§dAdmin-Shop: Spawn-Eier & Spawner kaufen")
+    .button("§cAdmin-Verkauf: Spawn-Eier & Spawner verkaufen")
     .button("§7Schließen");
   const res = await form.show(player);
-  if (res.canceled || res.selection === 2) return;
+  if (res.canceled || res.selection === 4) return;
   if (res.selection === 0) return openAdminBuyPrices(player);
   if (res.selection === 1) return openAdminSellCategories(player);
+  if (res.selection === 2) return openAdminSpecialItems(player, "buy");
+  if (res.selection === 3) return openAdminSpecialItems(player, "sell");
 }
 
 async function editPrice(player, itemId, itemName, side, currentCents, returnTo) {
@@ -972,7 +1011,7 @@ world.afterEvents.playerSpawn.subscribe(ev => {
     const p = ev.player;
     system.runTimeout(() => {
       const money = balance(p);
-      tell(p, "Willkommen! Dein Startguthaben: " + formatMoney(money) + ". Befehle: /market oder /shop; Admins: /survivalbazaar:admin.");
+      tell(p, "Willkommen! Dein Startguthaben: " + formatMoney(money) + ". Befehle: /market oder /shop; Admins: /sba:admin (oder /survivalbazaar:admin).");
     }, 40);
   }
 });
