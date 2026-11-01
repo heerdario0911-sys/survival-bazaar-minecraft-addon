@@ -338,7 +338,13 @@ function buildCompleteCatalog() {
   const buyGroups = [];
   for (let i = 0; i < items.length; i += 12) {
    const page = Math.floor(i / 12) + 1;
-   const label = items.length > 12 ? "Artikel " + page + "/" + Math.ceil(items.length / 12) : "Alle Artikel";
+   const firstLetter = value => {
+    const letter = String(value || "").trim().normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").match(/[a-z]/i)?.[0];
+    return letter ? letter.toLocaleUpperCase("de-DE") : "#";
+   };
+   const first = firstLetter(items[i][1]);
+   const last = firstLetter(items[Math.min(i + 11, items.length - 1)][1]);
+   const label = items.length > 12 ? "Artikel " + first + (first === last ? "" : "–" + last) : "Alle Artikel";
    const sellItems = items.slice(i, i + 12);
    sellGroups.push({ name: label, items: sellItems });
    buyGroups.push({
@@ -641,12 +647,28 @@ async function openBuySearch(player) {
   return showBuySearchResults(player, query, 0);
 }
 
+const WOOD_FAMILIES = ["oak","spruce","birch","jungle","acacia","dark_oak","mangrove","cherry","bamboo","crimson","warped","pale_oak"];
+function isWoodRelatedCatalogItem(item) {
+  const raw = item.id.replace(/^minecraft:/, "");
+  if (WOOD_FAMILIES.some(type =>
+    raw.startsWith(type + "_") ||
+    raw.startsWith("stripped_" + type + "_") ||
+    raw.includes("_" + type + "_")
+  )) return true;
+  return /^(wooden_|stick$|bowl$|chest$|trapped_chest$|crafting_table$|barrel$|bookshelf$|lectern$|jukebox$|note_block$|ladder$|scaffolding$|composter$|cartography_table$|fletching_table$|smithing_table$|loom$|campfire$|soul_campfire$|chest_boat$)/.test(raw);
+}
+function normalizeSearchText(value) {
+  return String(value ?? "").toLocaleLowerCase("de-DE").normalize("NFD").replace(/[\\u0300-\\u036f]/g, "");
+}
 async function showBuySearchResults(player, query, page) {
+  const normalizedQuery = normalizeSearchText(query);
+  const woodQuery = ["holz", "wood", "wooden", "bretter", "planks", "holzblock", "holzblöcke"].some(term => normalizedQuery.includes(normalizeSearchText(term)));
   const matches = allBuyEntries().filter(item =>
-    item.name.toLocaleLowerCase("de-DE").includes(query) ||
-    item.id.toLowerCase().includes(query) ||
-    item.category.toLocaleLowerCase("de-DE").includes(query) ||
-    item.group.toLocaleLowerCase("de-DE").includes(query)
+    normalizeSearchText(item.name).includes(normalizedQuery) ||
+    normalizeSearchText(item.id).includes(normalizedQuery) ||
+    normalizeSearchText(item.category).includes(normalizedQuery) ||
+    normalizeSearchText(item.group).includes(normalizedQuery) ||
+    (woodQuery && isWoodRelatedCatalogItem(item))
   );
   if (!matches.length) {
     tell(player, "Keine Gegenstände für „" + query + "“ gefunden.");
