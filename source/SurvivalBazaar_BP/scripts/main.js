@@ -1,6 +1,13 @@
 import { world, system, ItemStack, ItemTypes, CommandPermissionLevel, CustomCommandStatus, Player } from "@minecraft/server";
 import { ActionFormData, ModalFormData, MessageFormData } from "@minecraft/server-ui";
 
+// Alle Textfelder laufen zentral über diese 2-Argumente-Variante.
+// Damit kann kein alter String-Defaultwert versehentlich als Optionsobjekt landen.
+function addBazaarTextField(form, label, placeholder) {
+  if (!form || typeof form.textField !== "function") throw new TypeError("ModalFormData.textField ist nicht verfügbar.");
+  return form.textField(String(label), String(placeholder));
+}
+
 const CURRENCY = "€";
 const STARTING_BALANCE_CENTS = 10000;
 const formatMoney = cents => (cents / 100).toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " " + CURRENCY;
@@ -36,6 +43,12 @@ const SHOP = [
   ,{ id: "survivalbazaar:bookshelf", name: "Modernes Bücherregal", buy: 28, sell: 10 }
   ,{ id: "survivalbazaar:floor_lamp", name: "Stehlampe", buy: 20, sell: 7 }
   ,{ id: "survivalbazaar:armchair", name: "Polstersessel", buy: 24, sell: 9 }
+  ,{ id: "survivalbazaar:bar_counter", name: "Bartheke", buy: 35, sell: 13 }
+  ,{ id: "survivalbazaar:bar_stool", name: "Barhocker", buy: 12, sell: 4 }
+  ,{ id: "survivalbazaar:grandfather_clock", name: "Standuhr", buy: 30, sell: 11 }
+  ,{ id: "survivalbazaar:hanging_guitar", name: "Hängende Gitarre", buy: 22, sell: 8 }
+  ,{ id: "survivalbazaar:potted_plant", name: "Pflanzenkübel", buy: 9, sell: 3 }
+  ,{ id: "survivalbazaar:wall_shelf", name: "Wandregal", buy: 14, sell: 5 }
 ];
 
 // Verkaufs-Katalog: mehrstufige Kategorien, jedes Item einzeln verkaufbar.
@@ -504,8 +517,7 @@ async function addToBuyCart(player, entry, qty, returnTo) {
 }
 async function chooseBuyQuantity(player, entry, returnTo) {
   const [id, name] = entry;
-  const modal = new ModalFormData().title("§l§a" + name)
-    .textField("Anzahl zum Warenkorb hinzufügen (1–64)", "z. B. 4");
+  const modal = addBazaarTextField(new ModalFormData().title("§l§a" + name), "Anzahl zum Warenkorb hinzufügen (1–64)", "z. B. 4");
   const res = await modal.show(player);
   if (res.canceled) return returnTo();
   const qty = Number(String(res.formValues?.[0] ?? "").trim());
@@ -526,8 +538,7 @@ async function openBuyBasket(player, returnTo = openBuyShop) {
   if (res.canceled) return returnTo(player);
   if (res.selection < entries.length) {
     const item = entries[res.selection];
-    const modal = new ModalFormData().title("§l§e" + item.name)
-      .textField("Neue Menge (0 = entfernen, maximal 64)", "Anzahl");
+    const modal = addBazaarTextField(new ModalFormData().title("§l§e" + item.name), "Neue Menge (0 = entfernen, maximal 64)", "Anzahl");
     const edit = await modal.show(player);
     if (edit.canceled) return openBuyBasket(player, returnTo);
     const qty = Number(String(edit.formValues?.[0] ?? "").trim());
@@ -605,8 +616,7 @@ function allBuyEntries() {
 }
 
 async function openBuySearch(player) {
-  const modal = new ModalFormData().title("§l§bGEGENSTÄNDE SUCHEN")
-    .textField("Suchbegriff (Name oder ID)", "z. B. Diamant, Eiche, minecraft:stone");
+  const modal = addBazaarTextField(new ModalFormData().title("§l§bGEGENSTÄNDE SUCHEN"), "Suchbegriff (Name oder ID)", "z. B. Diamant, Eiche, minecraft:stone");
   const res = await modal.show(player);
   if (res.canceled) return openBuyShop(player);
   const query = String(res.formValues?.[0] ?? "").trim().toLocaleLowerCase("de-DE");
@@ -717,7 +727,7 @@ async function openSellItems(player, category, group) {
   const ownedAmounts = group.items.map(([id]) => countItem(player, id));
   for (let i = 0; i < group.items.length; i++) {
     const [id, name, basePrice] = group.items[i];
-    form.textField(name + " – " + formatMoney(getPriceCents(id, "sell", basePrice)) + " / Stück (Besitz: " + ownedAmounts[i] + ")", "Anzahl");
+    addBazaarTextField(form, name + " – " + formatMoney(getPriceCents(id, "sell", basePrice)) + " / Stück (Besitz: " + ownedAmounts[i] + ")", "Anzahl");
   }
   const res = await form.show(player);
   if (res.canceled) return openSellSubcategories(player, category);
@@ -753,21 +763,40 @@ async function openSellItems(player, category, group) {
 }
 
 
+async function openTextFieldCompatibilityTest(player) {
+  let modal;
+  try {
+    modal = addBazaarTextField(new ModalFormData().title("Survival Bazaar – UI-Test"), "Testeingabe (bitte 123 eingeben)", "123");
+  } catch (error) {
+    console.warn("[SurvivalBazaar] TextField-Aufbau fehlgeschlagen:", error?.stack ?? error);
+    tell(player, "§cUI-TEST FEHLER beim Erstellen: " + (error?.message ?? String(error)));
+    return;
+  }
+  try {
+    const result = await modal.show(player);
+    tell(player, result.canceled ? "UI-Test abgebrochen. Das Textfeld wurde angezeigt." : "§aUI-TEST ERFOLGREICH. Eingabe: " + String(result.formValues?.[0] ?? ""));
+  } catch (error) {
+    console.warn("[SurvivalBazaar] TextField-Anzeige fehlgeschlagen:", error?.stack ?? error);
+    tell(player, "§cUI-TEST FEHLER beim Anzeigen: " + (error?.message ?? String(error)));
+  }
+}
+
 async function openAdminMenu(player) {
   const form = new ActionFormData().title("§l§cBAZAAR-ADMIN")
     .body("§7Preise werden dauerhaft in den Weltdaten gespeichert.")
     .button("§aKaufpreise bearbeiten\n§7Server-Shop")
     .button("§eVerkaufspreise bearbeiten\n§7Verkaufskatalog")
+    .button("§bTextfeld-Kompatibilität testen\n§7Diagnose für Minecraft 26.60")
     .button("§7Schließen");
   const res = await form.show(player);
-  if (res.canceled || res.selection === 2) return;
+  if (res.canceled || res.selection === 3) return;
   if (res.selection === 0) return openAdminBuyPrices(player);
   if (res.selection === 1) return openAdminSellCategories(player);
+  if (res.selection === 2) return openTextFieldCompatibilityTest(player);
 }
 
 async function editPrice(player, itemId, itemName, side, currentCents, returnTo) {
-  const modal = new ModalFormData().title("Preis bearbeiten")
-    .textField(itemName + " – " + (side === "buy" ? "Kaufpreis" : "Verkaufspreis") + " in Euro (€)", "z. B. 12,50 €");
+  const modal = addBazaarTextField(new ModalFormData().title("Preis bearbeiten"), itemName + " – " + (side === "buy" ? "Kaufpreis" : "Verkaufspreis") + " in Euro (€)", "z. B. 12,50 €");
   const res = await modal.show(player);
   if (res.canceled) return returnTo();
   const cents = parseMoneyToCents(res.formValues?.[0]);
@@ -886,9 +915,9 @@ async function createListing(player) {
   if (!held) { tell(player, "Halte das Item, das du anbieten möchtest, in der Hand."); return openMarket(player); }
   const itemId = held.typeId;
   const itemName = held.nameTag || itemId.replace("minecraft:", "").replaceAll("_", " ");
-  const modal = new ModalFormData().title("Item anbieten")
-    .textField("Anzahl (max. 64)", "z. B. 1")
-    .textField("Gesamtpreis in Euro (€)", "z. B. 12,50 €");
+  const modal = new ModalFormData().title("Item anbieten");
+  addBazaarTextField(modal, "Anzahl (max. 64)", "z. B. 1");
+  addBazaarTextField(modal, "Gesamtpreis in Euro (€)", "z. B. 12,50 €");
   const res = await modal.show(player);
   if (res.canceled) return openMarket(player);
   const amount = Math.floor(Number(res.formValues?.[0]));
@@ -991,9 +1020,9 @@ async function openFridge(player, block, title = "KÜHLSCHRANK") {
   const res = await form.show(player);
   if (res.canceled || res.selection === 2) return;
   if (res.selection === 0) {
-    const modal = new ModalFormData().title("Einlagern")
-      .textField("Item-ID (z. B. minecraft:apple)", "minecraft:apple")
-      .textField("Anzahl (1–64)", "Anzahl");
+    const modal = new ModalFormData().title("Einlagern");
+    addBazaarTextField(modal, "Item-ID (z. B. minecraft:apple)", "minecraft:apple");
+    addBazaarTextField(modal, "Anzahl (1–64)", "Anzahl");
     const input = await modal.show(player);
     if (input.canceled) return openFridge(player, block, title);
     const id = String(input.formValues?.[0] ?? "").trim();
@@ -1033,8 +1062,7 @@ async function openFridge(player, block, title = "KÜHLSCHRANK") {
   if (selected.canceled || selected.selection === entries.length) return openFridge(player, block, title);
   const [id, available] = entries[selected.selection] ?? [];
   if (!id) return openFridge(player, block, title);
-  const amountForm = new ModalFormData().title("Entnehmen")
-    .textField("Anzahl (maximal " + available + ")", "Anzahl");
+  const amountForm = addBazaarTextField(new ModalFormData().title("Entnehmen"), "Anzahl (maximal " + available + ")", "Anzahl");
   const amountResult = await amountForm.show(player);
   if (amountResult.canceled) return openFridge(player, block, title);
   const qty = Number(String(amountResult.formValues?.[0] ?? "").trim());
