@@ -13,7 +13,7 @@
       },
       "minecraft:material_instances": {
         "*": {
-          "texture": "fridge",
+          "texture": "wardrobe",
           "render_method": "opaque"
         }
       },
