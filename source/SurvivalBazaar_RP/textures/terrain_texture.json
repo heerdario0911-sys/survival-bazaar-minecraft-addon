@@ -75,6 +75,9 @@
     },
     "wardrobe": {
       "textures": "textures/blocks/wardrobe"
+    },
+    "furniture_anchor": {
+      "textures": "textures/blocks/furniture_anchor"
     }
   }
 }
