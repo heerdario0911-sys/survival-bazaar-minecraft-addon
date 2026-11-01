@@ -1409,12 +1409,12 @@ system.beforeEvents.startup.subscribe(({ customCommandRegistry }) => {
   customCommandRegistry.registerCommand(
     {
       name: "survivalbazaar:admin",
-      description: "Öffnet die nur für den Welt-Host verfügbare Admin-Verwaltung des Survival Bazaar.",
-      permissionLevel: CommandPermissionLevel.Host,
+      description: "Öffnet die Admin-Verwaltung des Survival Bazaar (nur für Operatoren).",
+      permissionLevel: CommandPermissionLevel.Admin,
       cheatsRequired: false
     },
     (origin) => {
-      const player = origin.sourceEntity;
+      const player = origin.initiator ?? origin.sourceEntity;
       if (!(player instanceof Player)) {
         return { status: CustomCommandStatus.Failure, message: "Dieser Befehl kann nur von Spielern verwendet werden." };
       }
