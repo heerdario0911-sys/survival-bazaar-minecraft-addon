@@ -1077,10 +1077,20 @@ async function mountFurniture(player, block, entityId) {
 async function interactWithFurniture(player, block) {
   const id = block.typeId;
   const data = readFurnitureData(block);
-  if (id === "survivalbazaar:fridge") return openFridge(player, block, "KÜHLSCHRANK");
-  if (id === "survivalbazaar:wardrobe") return openFridge(player, block, "KLEIDERSCHRANK");
-  if (id === "survivalbazaar:bookshelf") return openFridge(player, block, "BÜCHERREGAL");
-  if (id === "survivalbazaar:wall_shelf") return openFridge(player, block, "WANDREGAL");
+  const storageLabels = {
+    "survivalbazaar:fridge": "KÜHLSCHRANK",
+    "survivalbazaar:wardrobe": "KLEIDERSCHRANK",
+    "survivalbazaar:bookshelf": "BÜCHERREGAL",
+    "survivalbazaar:wall_shelf": "WANDREGAL",
+    "survivalbazaar:bar_counter": "BARTHEKE",
+    "survivalbazaar:coffee_table": "COUCHTISCH",
+    "survivalbazaar:dining_table": "ESSTISCH",
+    "survivalbazaar:grandfather_clock": "STANDUHR",
+    "survivalbazaar:hanging_guitar": "GITARRENSCHRANK",
+    "survivalbazaar:potted_plant": "PFLANZENKÜBEL",
+    "survivalbazaar:wall_mirror": "SPIEGELSCHRANK"
+  };
+  if (storageLabels[id]) return openFridge(player, block, storageLabels[id]);
   const seats = {
     "survivalbazaar:modern_sofa": "survivalbazaar:modern_sofa_display",
     "survivalbazaar:modern_chair": "survivalbazaar:modern_chair_display",
