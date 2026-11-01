@@ -339,7 +339,7 @@ function buildCompleteCatalog() {
   for (let i = 0; i < items.length; i += 12) {
    const page = Math.floor(i / 12) + 1;
    const firstLetter = value => {
-    const letter = String(value || "").trim().normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").match(/[a-z]/i)?.[0];
+    const letter = String(value || "").trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").match(/[a-z]/i)?.[0];
     return letter ? letter.toLocaleUpperCase("de-DE") : "#";
    };
    const first = firstLetter(items[i][1]);
@@ -658,7 +658,7 @@ function isWoodRelatedCatalogItem(item) {
   return /^(wooden_|stick$|bowl$|chest$|trapped_chest$|crafting_table$|barrel$|bookshelf$|lectern$|jukebox$|note_block$|ladder$|scaffolding$|composter$|cartography_table$|fletching_table$|smithing_table$|loom$|campfire$|soul_campfire$|chest_boat$)/.test(raw);
 }
 function normalizeSearchText(value) {
-  return String(value ?? "").toLocaleLowerCase("de-DE").normalize("NFD").replace(/[\\u0300-\\u036f]/g, "");
+  return String(value ?? "").toLocaleLowerCase("de-DE").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 async function showBuySearchResults(player, query, page) {
   const normalizedQuery = normalizeSearchText(query);
