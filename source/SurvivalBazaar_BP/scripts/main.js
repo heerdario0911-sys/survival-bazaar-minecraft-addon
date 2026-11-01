@@ -5,7 +5,7 @@ import { ActionFormData, ModalFormData, MessageFormData } from "@minecraft/serve
 // Damit kann kein alter String-Defaultwert versehentlich als Optionsobjekt landen.
 function addBazaarTextField(form, label, placeholder) {
   if (!form || typeof form.textField !== "function") throw new TypeError("ModalFormData.textField ist nicht verfügbar.");
-  return form.textField(String(label), String(placeholder));
+  return form.textField(String(label), String(placeholder), "");
 }
 
 const CURRENCY = "€";
@@ -29,26 +29,6 @@ const SHOP = [
   { id: "minecraft:diamond", name: "Diamant", buy: 250, sell: 90 },
   { id: "minecraft:arrow", name: "Pfeil", buy: 3, sell: 1 },
   { id: "minecraft:ender_pearl", name: "Enderperle", buy: 45, sell: 15 },
-  // Moderne, eigens modellierte Möbel aus dem Survival Bazaar Resource Pack
-  { id: "survivalbazaar:modern_sofa", name: "Modernes Sofa", buy: 25, sell: 9 },
-  { id: "survivalbazaar:flat_tv", name: "Flachbildfernseher", buy: 33, sell: 12 },
-  { id: "survivalbazaar:wall_mirror", name: "Wandspiegel", buy: 13, sell: 5 },
-  { id: "survivalbazaar:coffee_table", name: "Couchtisch", buy: 10, sell: 3 },
-  { id: "survivalbazaar:modern_chair", name: "Moderner Sessel", buy: 15, sell: 5 },
-  { id: "survivalbazaar:double_bed", name: "Doppelbett", buy: 28, sell: 10 },
-  { id: "survivalbazaar:fridge", name: "Kühlschrank", buy: 30, sell: 10 }
-,
-  { id: "survivalbazaar:dining_table", name: "Esstisch", buy: 32, sell: 12 }
-  ,{ id: "survivalbazaar:wardrobe", name: "Kleiderschrank", buy: 48, sell: 18 }
-  ,{ id: "survivalbazaar:bookshelf", name: "Modernes Bücherregal", buy: 28, sell: 10 }
-  ,{ id: "survivalbazaar:floor_lamp", name: "Stehlampe", buy: 20, sell: 7 }
-  ,{ id: "survivalbazaar:armchair", name: "Polstersessel", buy: 24, sell: 9 }
-  ,{ id: "survivalbazaar:bar_counter", name: "Bartheke", buy: 35, sell: 13 }
-  ,{ id: "survivalbazaar:bar_stool", name: "Barhocker", buy: 12, sell: 4 }
-  ,{ id: "survivalbazaar:grandfather_clock", name: "Standuhr", buy: 30, sell: 11 }
-  ,{ id: "survivalbazaar:hanging_guitar", name: "Hängende Gitarre", buy: 22, sell: 8 }
-  ,{ id: "survivalbazaar:potted_plant", name: "Pflanzenkübel", buy: 9, sell: 3 }
-  ,{ id: "survivalbazaar:wall_shelf", name: "Wandregal", buy: 14, sell: 5 }
 ];
 
 // Verkaufs-Katalog: mehrstufige Kategorien, jedes Item einzeln verkaufbar.
@@ -195,9 +175,8 @@ SELL_CATEGORIES.push({ name: "Bauen und Dekoration", groups: [
   { name: "Stein und Bauteile", items: stoneParts }
 ]});
 
-// Einkaufskatalog: übernimmt alle Gegenstände aus dem Verkaufskatalog,
-// berechnet standardmäßig einen Einkaufspreis von 2× Verkaufspreis und
-// ergänzt die festen Server-Shop-Preise sowie die Möbel.
+// Einkaufskatalog: übernimmt ausschließlich Vanilla-Gegenstände aus dem Verkaufskatalog.
+// Standard-Kaufpreis: 2× Verkaufspreis; feste Server-Shop-Preise haben Vorrang.
 const BUY_PRICE_OVERRIDES = Object.fromEntries(SHOP.map(item => [item.id, item.buy]));
 const BUY_CATEGORIES = SELL_CATEGORIES.map(category => ({
   name: category.name,
@@ -219,24 +198,6 @@ for (const category of BUY_CATEGORIES) {
   }
   category.groups = category.groups.filter(group => group.items.length > 0);
 }
-BUY_CATEGORIES.push({
-  name: "Möbel und Einrichtung",
-  groups: [{
-    name: "Moderne Möbel",
-    items: SHOP.filter(item => item.id.startsWith("survivalbazaar:"))
-      .map(item => [item.id, item.name, item.buy])
-  }]
-});
-
-SELL_CATEGORIES.push({
-  name: "Möbel und Einrichtung",
-  groups: [{
-    name: "Moderne Möbel",
-    items: SHOP.filter(item => item.id.startsWith("survivalbazaar:"))
-      .map(item => [item.id, item.name, item.sell])
-  }]
-});
-
 
 let FULL_CATALOG_READY = false;
 const ITEM_LABELS_DE = {
@@ -303,18 +264,6 @@ function buildCompleteCatalog() {
   const sellPrice = catalogSellPrice(id);
   grouped.get(category).push([id, catalogLabel(id), sellPrice]);
   seen.add(id);
- }
-
- // Eigene Möbel bleiben neben dem vollständigen Vanilla-Katalog erhalten.
- for (const furniture of SHOP.filter(item => item.id.startsWith("survivalbazaar:"))) {
-  try {
-   new ItemStack(furniture.id, 1);
-   if (!grouped.has("Möbel und Einrichtung")) grouped.set("Möbel und Einrichtung", []);
-   if (!seen.has(furniture.id)) grouped.get("Möbel und Einrichtung").push([furniture.id, furniture.name, furniture.sell]);
-   seen.add(furniture.id);
-  } catch (error) {
-   console.warn("[SurvivalBazaar] Möbel-Item nicht verfügbar:", furniture.id);
-  }
  }
 
  const categoryNames = [...grouped.keys()].sort((a, b) => a.localeCompare(b, "de"));
