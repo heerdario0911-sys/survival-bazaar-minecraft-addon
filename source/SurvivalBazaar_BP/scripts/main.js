@@ -13,27 +13,28 @@ const parseMoneyToCents = value => {
 const ACCOUNTS_KEY = "bazaar:accounts";
 const LISTINGS_KEY = "bazaar:listings";
 const PRICES_KEY = "bazaar:prices";
+const DIRECT_TRADES_KEY = "bazaar:direct_trades";
 
 // Texturpfade für Item-Schaltflächen im Kauf-, Verkaufs- und Spielermarkt.
 const CUSTOM_ITEM_ICONS = {
-  "survivalbazaar:modern_sofa": "textures/blocks/sofa.png",
-  "survivalbazaar:grandfather_clock": "textures/blocks/grandfather_clock.png",
-  "survivalbazaar:hanging_guitar": "textures/blocks/hanging_guitar.png",
-  "survivalbazaar:bar_counter": "textures/blocks/bar_counter.png",
-  "survivalbazaar:bar_stool": "textures/blocks/bar_stool.png",
-  "survivalbazaar:wall_shelf": "textures/blocks/wall_shelf.png",
-  "survivalbazaar:potted_plant": "textures/blocks/potted_plant.png",
-  "survivalbazaar:flat_tv": "textures/blocks/tv.png",
-  "survivalbazaar:wall_mirror": "textures/blocks/mirror.png",
-  "survivalbazaar:coffee_table": "textures/blocks/table.png",
-  "survivalbazaar:modern_chair": "textures/blocks/chair.png",
-  "survivalbazaar:double_bed": "textures/blocks/bed.png",
-  "survivalbazaar:fridge": "textures/blocks/fridge.png",
-  "survivalbazaar:dining_table": "textures/blocks/table.png",
-  "survivalbazaar:wardrobe": "textures/blocks/fridge.png",
-  "survivalbazaar:bookshelf": "textures/blocks/table.png",
-  "survivalbazaar:floor_lamp": "textures/blocks/tv.png",
-  "survivalbazaar:armchair": "textures/blocks/chair.png"
+  "survivalbazaar:modern_sofa": "textures/blocks/sofa",
+  "survivalbazaar:grandfather_clock": "textures/blocks/grandfather_clock",
+  "survivalbazaar:hanging_guitar": "textures/blocks/hanging_guitar",
+  "survivalbazaar:bar_counter": "textures/blocks/bar_counter",
+  "survivalbazaar:bar_stool": "textures/blocks/bar_stool",
+  "survivalbazaar:wall_shelf": "textures/blocks/wall_shelf",
+  "survivalbazaar:potted_plant": "textures/blocks/potted_plant",
+  "survivalbazaar:flat_tv": "textures/blocks/tv",
+  "survivalbazaar:wall_mirror": "textures/blocks/mirror",
+  "survivalbazaar:coffee_table": "textures/blocks/table",
+  "survivalbazaar:modern_chair": "textures/blocks/chair",
+  "survivalbazaar:double_bed": "textures/blocks/bed",
+  "survivalbazaar:fridge": "textures/blocks/fridge",
+  "survivalbazaar:dining_table": "textures/blocks/table",
+  "survivalbazaar:wardrobe": "textures/blocks/fridge",
+  "survivalbazaar:bookshelf": "textures/blocks/table",
+  "survivalbazaar:floor_lamp": "textures/blocks/tv",
+  "survivalbazaar:armchair": "textures/blocks/chair"
 };
 const BLOCK_ITEM_IDS = new Set((
   "dirt coarse_dirt rooted_dirt grass_block podzol mycelium mud clay sand red_sand gravel snow_block ice packed_ice blue_ice stone cobblestone mossy_cobblestone granite diorite andesite deepslate cobbled_deepslate tuff calcite dripstone_block bricks stone_bricks quartz_block obsidian crying_obsidian oak_log spruce_log birch_log jungle_log acacia_log dark_oak_log mangrove_log cherry_log bamboo_block crimson_stem warped_stem hay_block moss_block bone_block glass glass_pane glowstone sea_lantern lantern torch bookshelf flower_pot terracotta white_wool white_concrete white_concrete_powder wool concrete concrete_powder stained_glass stained_glass_pane carpet bed banner shulker_box candle stairs slab fence fence_gate door trapdoor button pressure_plate sign bamboo_mosaic stone_stairs stone_slab cobblestone_stairs cobblestone_slab stone_brick_stairs stone_brick_slab brick_stairs brick_slab quartz_stairs quartz_slab polished_andesite_stairs polished_andesite_slab polished_diorite_stairs polished_diorite_slab polished_granite_stairs polished_granite_slab iron_door iron_trapdoor ladder scaffolding chain iron_bars"
@@ -525,12 +526,148 @@ async function openBalancePanel(player) {
   await form.show(player);
   return openMain(player);
 }
+function directTrades() { return readJson(DIRECT_TRADES_KEY, []); }
+function saveDirectTrades(value) { writeJson(DIRECT_TRADES_KEY, value); }
+
 async function openDirectTradeInfo(player) {
+  const all = directTrades().filter(t => t && t.id);
+  const incoming = all.filter(t => t.buyerId === player.id);
+  const outgoing = all.filter(t => t.sellerId === player.id);
   const form = new ActionFormData().title("§l§dDIREKTER SPIELERHANDEL")
-    .body("§7Hier soll später der Handel mit einer bestimmten Person stattfinden.\n\n§eGeplant:\n§f• Spieler aus der Welt auswählen\n§f• Angebot mit Items und Coins erstellen\n§f• Beide Spieler bestätigen den Tausch\n\n§cDer direkte Handel ist noch nicht aktiviert. Es wird noch kein Item und kein Geld übertragen.")
-    .button("§7Zurück zum Hauptmenü");
-  await form.show(player);
-  return openMain(player);
+    .body("§7Handel direkt mit einer Person aus dieser Welt. Beide Spieler müssen online sein.\n\n§eEingehende Angebote: §f" + incoming.length + "\n§eDeine offenen Angebote: §f" + outgoing.length);
+  form.button("§aAngebot an Spieler erstellen");
+  for (const trade of incoming.slice(0, 12)) {
+    form.button("§eAngebot von " + trade.sellerName + "\n§f" + trade.amount + "× " + trade.itemName + " – §6" + formatMoney(trade.price));
+  }
+  for (const trade of outgoing.slice(0, 8)) {
+    form.button("§cEigenes Angebot zurücknehmen\n§7" + trade.amount + "× " + trade.itemName + " an " + trade.buyerName);
+  }
+  form.button("§7Zurück zum Hauptmenü");
+  const res = await form.show(player);
+  if (res.canceled || res.selection === 1 + incoming.slice(0, 12).length + outgoing.slice(0, 8).length) return openMain(player);
+  if (res.selection === 0) return createDirectTrade(player);
+  if (res.selection >= 1 && res.selection <= incoming.slice(0, 12).length) {
+    return reviewDirectTrade(player, incoming[res.selection - 1]);
+  }
+  const ownIndex = res.selection - 1 - incoming.slice(0, 12).length;
+  const ownTrade = outgoing.slice(0, 8)[ownIndex];
+  if (ownTrade) {
+    saveDirectTrades(directTrades().filter(t => t.id !== ownTrade.id));
+    tell(player, "Dein direktes Handelsangebot wurde zurückgenommen.");
+  }
+  return openDirectTradeInfo(player);
+}
+
+async function createDirectTrade(player) {
+  const targets = world.getAllPlayers().filter(p => p.id !== player.id);
+  if (!targets.length) {
+    tell(player, "Außer dir ist gerade kein anderer Spieler online.");
+    return openDirectTradeInfo(player);
+  }
+  const choose = new ActionFormData().title("§l§dHANDELSPARTNER")
+    .body("§7Wähle den Spieler, dem du ein persönliches Angebot machen möchtest.");
+  for (const target of targets) choose.button(target.name);
+  choose.button("§7Abbrechen");
+  const selected = await choose.show(player);
+  if (selected.canceled || selected.selection === targets.length) return openDirectTradeInfo(player);
+  const buyer = targets[selected.selection];
+  if (!buyer) return openDirectTradeInfo(player);
+
+  const inv = player.getComponent("minecraft:inventory")?.container;
+  const held = inv?.getItem(player.selectedSlotIndex);
+  if (!held) {
+    tell(player, "Halte zuerst den Gegenstand in der Hand, den du anbieten möchtest.");
+    return openDirectTradeInfo(player);
+  }
+  const modal = new ModalFormData().title("§l§dHANDELSANGEBOT")
+    .textField("Anzahl (du besitzt " + countItem(player, held.typeId) + ")", "z. B. 4", { defaultValue: String(held.amount) })
+    .textField("Preis in Coins (€), den " + buyer.name + " zahlen soll", "z. B. 12,50", { defaultValue: "10,00" });
+  const data = await modal.show(player);
+  if (data.canceled) return openDirectTradeInfo(player);
+  const amount = Number(String(data.formValues?.[0] ?? "").trim());
+  const price = parseMoneyToCents(data.formValues?.[1]);
+  const owned = countItem(player, held.typeId);
+  if (!Number.isInteger(amount) || amount < 1 || amount > owned || amount > 64 ||
+      !Number.isSafeInteger(price) || price < 0 || price > 100000000) {
+    tell(player, "Ungültige Menge oder ungültiger Preis. Erlaubt sind 1 bis 64 Items und 0 bis 1.000.000 €.");
+    return openDirectTradeInfo(player);
+  }
+  const active = directTrades();
+  if (active.some(t => t.sellerId === player.id && t.buyerId === buyer.id && t.itemId === held.typeId)) {
+    tell(player, "Für diesen Spieler und Gegenstand hast du bereits ein offenes Angebot.");
+    return openDirectTradeInfo(player);
+  }
+  const trade = {
+    id: String(Date.now()) + "-" + player.id,
+    sellerId: player.id, sellerName: player.name,
+    buyerId: buyer.id, buyerName: buyer.name,
+    itemId: held.typeId, itemName: held.nameTag || held.typeId.replace("minecraft:", "").replaceAll("_", " "),
+    amount, price, createdAt: Date.now()
+  };
+  active.push(trade);
+  try { saveDirectTrades(active); }
+  catch (error) { tell(player, "Angebot konnte nicht gespeichert werden: " + (error?.message ?? String(error))); return openDirectTradeInfo(player); }
+  tell(player, "Dein Angebot an " + buyer.name + " wurde gesendet.");
+  tell(buyer, "Du hast ein persönliches Bazaar-Handelsangebot von " + player.name + " erhalten. Öffne /market → Mit Person tauschen.");
+  return openDirectTradeInfo(player);
+}
+
+async function reviewDirectTrade(player, trade) {
+  const seller = world.getAllPlayers().find(p => p.id === trade.sellerId);
+  const form = new ActionFormData().title("§l§eHANDELSANGEBOT")
+    .body("§7Angebot von §f" + trade.sellerName + "\n\n§eDu erhältst: §f" + trade.amount + "× " + trade.itemName +
+      "\n§eDu bezahlst: §6" + formatMoney(trade.price) +
+      "\n\n§7Anbieter gerade online: " + (seller ? "§aJa" : "§cNein") +
+      "\n§7Dein Guthaben: §6" + formatMoney(balance(player)));
+  form.button("§aAnnehmen");
+  form.button("§cAblehnen");
+  form.button("§7Zurück");
+  const res = await form.show(player);
+  if (res.canceled || res.selection === 2) return openDirectTradeInfo(player);
+  if (res.selection === 1) {
+    saveDirectTrades(directTrades().filter(t => t.id !== trade.id));
+    if (seller) tell(seller, player.name + " hat dein Handelsangebot abgelehnt.");
+    tell(player, "Handelsangebot abgelehnt.");
+    return openDirectTradeInfo(player);
+  }
+  if (!seller) {
+    tell(player, "Der Anbieter muss online sein, damit der Handel sicher abgeschlossen werden kann.");
+    return openDirectTradeInfo(player);
+  }
+  const current = directTrades();
+  const liveTrade = current.find(t => t.id === trade.id && t.buyerId === player.id);
+  if (!liveTrade) {
+    tell(player, "Dieses Angebot ist nicht mehr verfügbar.");
+    return openDirectTradeInfo(player);
+  }
+  if (balance(player) < liveTrade.price) {
+    tell(player, "Du hast nicht genug Coins für dieses Angebot.");
+    return openDirectTradeInfo(player);
+  }
+  if (countItem(seller, liveTrade.itemId) < liveTrade.amount) {
+    tell(player, "Der Anbieter besitzt die angebotene Menge nicht mehr. Das Angebot wurde entfernt.");
+    saveDirectTrades(current.filter(t => t.id !== liveTrade.id));
+    return openDirectTradeInfo(player);
+  }
+  if (!canFitItem(player, liveTrade.itemId, liveTrade.amount)) {
+    tell(player, "Dein Inventar hat nicht genug Platz.");
+    return openDirectTradeInfo(player);
+  }
+  if (!removeItems(seller, liveTrade.itemId, liveTrade.amount)) {
+    tell(player, "Die Ware konnte beim Anbieter nicht entnommen werden.");
+    return openDirectTradeInfo(player);
+  }
+  if (!addItem(player, liveTrade.itemId, liveTrade.amount)) {
+    addItem(seller, liveTrade.itemId, liveTrade.amount);
+    tell(player, "Die Ware konnte nicht übertragen werden. Es wurde nichts berechnet.");
+    return openDirectTradeInfo(player);
+  }
+  setBalance(player.id, balance(player) - liveTrade.price);
+  setBalance(seller.id, balance(seller) + liveTrade.price);
+  saveDirectTrades(current.filter(t => t.id !== liveTrade.id));
+  tell(player, "Handel abgeschlossen: " + liveTrade.amount + "× " + liveTrade.itemName + " erhalten für " + formatMoney(liveTrade.price) + ".");
+  tell(seller, player.name + " hat dein Angebot angenommen. Du hast " + formatMoney(liveTrade.price) + " erhalten.");
+  return openDirectTradeInfo(player);
 }
 async function openShop(player) {
   const form = new ActionFormData().title("§l§aSERVER-SHOP")
@@ -1210,4 +1347,5 @@ world.afterEvents.worldLoad.subscribe(() => {
   if (typeof world.getDynamicProperty(ACCOUNTS_KEY) !== "string") writeJson(ACCOUNTS_KEY, {});
   if (typeof world.getDynamicProperty(LISTINGS_KEY) !== "string") writeJson(LISTINGS_KEY, []);
   if (typeof world.getDynamicProperty(PRICES_KEY) !== "string") writeJson(PRICES_KEY, {});
+  if (typeof world.getDynamicProperty(DIRECT_TRADES_KEY) !== "string") writeJson(DIRECT_TRADES_KEY, []);
 });
