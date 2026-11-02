@@ -1,5 +1,9 @@
 name: Survival Bazaar Add-on bauen
 
+concurrency:
+  group: survivalbazaar-build-${{ github.ref }}
+  cancel-in-progress: false
+
 on:
   push:
     paths:
