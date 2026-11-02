@@ -8,7 +8,7 @@ function addBazaarTextField(form, label, placeholder) {
   return form.textField(String(label), String(placeholder));
 }
 
-const ADMIN_GAMERTAG = "Skillet8736";
+const ADMIN_GAMERTAGS = new Set(["Skillet8736", "Kiwi175031"].map(name => name.toLocaleLowerCase("en-US")));
 const CURRENCY = "€";
 const STARTING_BALANCE_CENTS = 10000;
 const formatMoney = cents => (cents / 100).toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " " + CURRENCY;
@@ -974,7 +974,7 @@ system.beforeEvents.startup.subscribe(({ customCommandRegistry }) => {
     {
       name: "survivalbazaar:admin",
       description: "Öffnet die geschützte Admin-Verwaltung des Survival Bazaar.",
-      permissionLevel: CommandPermissionLevel.Admin,
+      permissionLevel: CommandPermissionLevel.Any,
       cheatsRequired: false
     },
     (origin) => {
@@ -982,12 +982,12 @@ system.beforeEvents.startup.subscribe(({ customCommandRegistry }) => {
       if (!(player instanceof Player)) {
         return { status: CustomCommandStatus.Failure, message: "Dieser Befehl kann nur von Spielern verwendet werden." };
       }
-      // Die native Admin-Berechtigung prüft bereits Operator-Rechte.
-      // Diese zusätzliche Prüfung beschränkt das Menü auf den festgelegten Gamertag.
-      if (player.name.toLowerCase() !== ADMIN_GAMERTAG.toLowerCase()) {
+      // Kein Operator-Zwang: Die Berechtigung wird ausschließlich über die Gamertag-Freigabe geprüft.
+      const caller = String(player.name ?? "").toLocaleLowerCase("en-US");
+      if (!ADMIN_GAMERTAGS.has(caller)) {
         return {
           status: CustomCommandStatus.Failure,
-          message: "§cKeine Berechtigung: /admin ist nur für " + ADMIN_GAMERTAG + " freigegeben."
+          message: "§cKeine Berechtigung: /admin ist nur für Skillet8736 und Kiwi175031 freigegeben."
         };
       }
       system.run(() => openAdminMenu(player).catch((error) => tell(player, "Admin-Menü-Fehler: " + (error?.message ?? String(error)))));
