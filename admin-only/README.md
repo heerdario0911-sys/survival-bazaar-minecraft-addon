@@ -5,9 +5,9 @@ This is a separate, clean Minecraft Bedrock Behavior Pack. It does not reuse or 
 ## Access control
 - Registered command: `survivalbazaar:admin`.
 - Minecraft also exposes the short chat alias `/admin` for a namespaced custom command.
-- Native permission: `CommandPermissionLevel.Admin` (operator command permission).
-- Additional exact player-name allowlist: `Skillet8736`.
-- Other players, including other operators, are rejected by the allowlist check.
+- Native permission: `CommandPermissionLevel.Any` – no Operator permission is required.
+- Exact player-name allowlist: `Skillet8736` and `Kiwi175031`.
+- Only these two exact names can open or use the admin menus; all other players, including operators, are rejected.
 
 ## Admin menu
 1. **Price management** – searchable, paginated catalog of common vanilla items. Prices are saved as world dynamic properties.
