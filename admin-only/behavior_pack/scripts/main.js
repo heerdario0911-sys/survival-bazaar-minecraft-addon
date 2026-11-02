@@ -129,7 +129,6 @@ const ADMIN_ONLY_ITEMS = [
   ["Tadpole Spawn Egg", "minecraft:tadpole_spawn_egg"],
   ["Turtle Spawn Egg", "minecraft:turtle_spawn_egg"],
   ["Wolf Spawn Egg", "minecraft:wolf_spawn_egg"],
-  ["Parched Spawn Egg", "minecraft:parched_spawn_egg"],
   ["Spawner", "minecraft:mob_spawner"]
 ];
 
@@ -142,7 +141,7 @@ system.beforeEvents.startup.subscribe((event) => {
       cheatsRequired: false
     },
     (origin) => {
-      const player = origin.sourceEntity;
+      const player = origin.initiator ?? origin.sourceEntity;
       if (!(player instanceof Player)) {
         return { status: CustomCommandStatus.Failure, message: "Only a player can use this command." };
       }
