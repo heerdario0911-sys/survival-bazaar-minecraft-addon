@@ -150,10 +150,13 @@ export function migrateLegacyPlayerData(player) {
     const oldPlayerBalance = Number(player.getDynamicProperty("sb_coins"));
 
     if (!hadIdBalance) {
-        if (Number.isSafeInteger(namedBalance) && namedBalance >= 0) {
-            state.accounts[player.id] = namedBalance;
-        } else if (Number.isSafeInteger(oldPlayerBalance) && oldPlayerBalance >= 0) {
-            state.accounts[player.id] = oldPlayerBalance;
+        const hasNamedBalance = Number.isSafeInteger(namedBalance) && namedBalance >= 0;
+        const hasOldPlayerBalance = Number.isSafeInteger(oldPlayerBalance) && oldPlayerBalance >= 0;
+
+        if (hasNamedBalance || hasOldPlayerBalance) {
+            state.accounts[player.id] =
+                (hasNamedBalance ? namedBalance : 0) +
+                (hasOldPlayerBalance ? oldPlayerBalance : 0);
         } else {
             state.accounts[player.id] = STARTING_BALANCE_CENTS;
         }
