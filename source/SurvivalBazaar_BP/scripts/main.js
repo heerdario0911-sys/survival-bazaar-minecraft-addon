@@ -295,6 +295,8 @@ function buildCompleteCatalog() {
   const id = type?.id;
   if (typeof id !== "string" || !id.startsWith("minecraft:") || seen.has(id)) continue;
   const raw = id.slice("minecraft:".length);
+  // Spawn-Eier und Spawner gehören ausschließlich in den geschützten Admin-Bereich.
+  if (raw.endsWith("_spawn_egg") || raw === "mob_spawner" || raw === "spawner") continue;
   if (technical.test(raw)) continue;
   // Nur Einträge, die Bedrock als echtes Inventar-Item anlegen kann.
   try { new ItemStack(id, 1); } catch { continue; }
@@ -782,18 +784,84 @@ async function openTextFieldCompatibilityTest(player) {
   }
 }
 
+function getAdminSpawnEntries() {
+  const ids = new Set();
+  try {
+    for (const type of ItemTypes.getAll()) {
+      const id = type?.id;
+      if (typeof id === "string" && id.startsWith("minecraft:") && id.endsWith("_spawn_egg")) ids.add(id);
+    }
+  } catch (error) {
+    console.warn("[SurvivalBazaar] Spawn-Ei-Katalog konnte nicht gelesen werden:", error);
+  }
+  // Der Spawner wird nur angeboten, wenn Bedrock ihn als ItemStack unterstützt.
+  for (const id of ["minecraft:mob_spawner", "minecraft:spawner"]) {
+    try { new ItemStack(id, 1); ids.add(id); } catch {}
+  }
+  return [...ids].map(id => ({
+    id,
+    name: id === "minecraft:mob_spawner" || id === "minecraft:spawner" ? "Spawner" : catalogLabel(id)
+  })).sort((a, b) => a.name.localeCompare(b.name, "de"));
+}
+
+async function openAdminSpawnItems(player, page = 0) {
+  const entries = getAdminSpawnEntries();
+  if (!entries.length) {
+    tell(player, "In dieser Bedrock-Version wurden keine Spawn-Eier oder Spawner-Items gefunden.");
+    return openAdminMenu(player);
+  }
+  const pageSize = 25;
+  const start = page * pageSize;
+  const shown = entries.slice(start, start + pageSize);
+  const form = new ActionFormData().title("§l§dSPAWN-EIER & SPAWNER")
+    .body("§7Dieser Bereich ist ausschließlich für freigeschaltete Admins.
+§7Seite " + (page + 1) + "/" + Math.ceil(entries.length / pageSize));
+  for (const item of shown) form.button(item.name);
+  if (page > 0) form.button("§7Vorherige Seite");
+  if (start + pageSize < entries.length) form.button("§eWeitere Ergebnisse");
+  form.button("§7Admin-Menü");
+  const res = await form.show(player);
+  if (res.canceled) return openAdminMenu(player);
+  if (res.selection < shown.length) {
+    const item = shown[res.selection];
+    const inv = player.getComponent("minecraft:inventory")?.container;
+    if (!inv) tell(player, "Dein Inventar konnte nicht geöffnet werden.");
+    else {
+      try {
+        const leftover = inv.addItem(new ItemStack(item.id, 1));
+        tell(player, leftover ? "Dein Inventar ist voll." : item.name + " wurde dir gegeben.");
+      } catch (error) {
+        tell(player, "Dieses Item kann in deiner Bedrock-Version nicht ausgegeben werden: " + item.id);
+      }
+    }
+    return openAdminSpawnItems(player, page);
+  }
+  let action = res.selection - shown.length;
+  if (page > 0) {
+    if (action === 0) return openAdminSpawnItems(player, page - 1);
+    action--;
+  }
+  if (start + pageSize < entries.length) {
+    if (action === 0) return openAdminSpawnItems(player, page + 1);
+    action--;
+  }
+  return openAdminMenu(player);
+}
+
 async function openAdminMenu(player) {
   const form = new ActionFormData().title("§l§cBAZAAR-ADMIN")
     .body("§7Preise werden dauerhaft in den Weltdaten gespeichert.")
     .button("§aKaufpreise bearbeiten\n§7Server-Shop")
     .button("§eVerkaufspreise bearbeiten\n§7Verkaufskatalog")
+    .button("§dSpawn-Eier & Spawner\n§7Nur für freigeschaltete Admins")
     .button("§bTextfeld-Kompatibilität testen\n§7Diagnose für Minecraft 26.60")
     .button("§7Schließen");
   const res = await form.show(player);
-  if (res.canceled || res.selection === 3) return;
+  if (res.canceled || res.selection === 4) return;
   if (res.selection === 0) return openAdminBuyPrices(player);
   if (res.selection === 1) return openAdminSellCategories(player);
-  if (res.selection === 2) return openTextFieldCompatibilityTest(player);
+  if (res.selection === 2) return openAdminSpawnItems(player);
+  if (res.selection === 3) return openTextFieldCompatibilityTest(player);
 }
 
 async function editPrice(player, itemId, itemName, side, currentCents, returnTo) {
