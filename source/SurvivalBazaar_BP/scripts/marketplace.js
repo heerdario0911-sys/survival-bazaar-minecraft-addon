@@ -6,7 +6,7 @@ const LEGACY_ACCOUNTS_KEY = "bazaar:accounts";
 const LEGACY_LISTINGS_KEY = "bazaar:listings";
 const STARTING_BALANCE_CENTS = 10000;
 const STORAGE_BASE = { x: 100000, y: -63, z: 100000 };
-const STORAGE_CHESTS = 4;
+const STORAGE_CHESTS = 20;
 const STORAGE_SLOTS = 27;
 const MAX_LISTINGS = STORAGE_CHESTS * STORAGE_SLOTS;
 
@@ -52,22 +52,58 @@ function loadState() {
     const oldPending = parseJsonProperty("sb_pending_payouts", {});
 
     const migratedSbListings = Array.isArray(sbListings)
-        ? sbListings.map(offer => ({
-            id: String(offer.id ?? (Date.now() + "-" + Math.random())),
-            sellerId: String(offer.seller ?? offer.sellerName ?? "unbekannt"),
-            sellerName: String(offer.seller ?? offer.sellerName ?? "unbekannt"),
-            itemId: String(offer.itemId ?? ""),
-            itemName: String(offer.itemId ?? "Gegenstand"),
-            amount: Number(offer.amount ?? 0),
-            price: Number(offer.price ?? 0),
-            legacy: true
-        })).filter(offer =>
-            offer.itemId &&
-            Number.isSafeInteger(offer.amount) &&
-            offer.amount > 0 &&
-            Number.isSafeInteger(offer.price) &&
-            offer.price > 0
-        )
+        ? sbListings.flatMap(offer => {
+            const itemId = String(offer.itemId ?? "");
+            const totalAmount = Number(offer.amount ?? 0);
+            const totalPrice = Number(offer.price ?? 0);
+
+            if (
+                !itemId ||
+                !Number.isSafeInteger(totalAmount) ||
+                totalAmount <= 0 ||
+                !Number.isSafeInteger(totalPrice) ||
+                totalPrice < 0
+            ) {
+                return [];
+            }
+
+            let maxStack = 64;
+
+            try {
+                maxStack = new ItemStack(itemId, 1).maxAmount;
+            } catch {
+                return [];
+            }
+
+            const sellerName = String(offer.seller ?? offer.sellerName ?? "unbekannt");
+            const result = [];
+            let remainingAmount = totalAmount;
+            let remainingPrice = totalPrice;
+            let part = 0;
+
+            while (remainingAmount > 0) {
+                const amount = Math.min(maxStack, remainingAmount);
+                const price = amount === remainingAmount
+                    ? remainingPrice
+                    : Math.floor(totalPrice * amount / totalAmount);
+
+                result.push({
+                    id: String(offer.id ?? (Date.now() + "-" + Math.random())) + "-part-" + (++part),
+                    sellerId: sellerName,
+                    sellerName,
+                    itemId,
+                    itemName: itemId.replace(/^(minecraft|survivalbazaar):/, "").replaceAll("_", " "),
+                    amount,
+                    price,
+                    legacy: true
+                });
+
+                remainingAmount -= amount;
+                remainingPrice -= price;
+            }
+
+            return result;
+        })
         : [];
 
     const state = {
@@ -165,7 +201,7 @@ function ensureStorage() {
         dimension.runCommand(
             "tickingarea add circle " +
             STORAGE_BASE.x + " 0 " +
-            STORAGE_BASE.z + " 1 survivalbazaar_market"
+            STORAGE_BASE.z + " 2 survivalbazaar_market"
         );
     } catch {
         // An existing ticking area with this name is expected on later loads.
