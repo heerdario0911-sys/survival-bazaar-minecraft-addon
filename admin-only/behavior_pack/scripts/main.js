@@ -70,11 +70,15 @@ const GIVE_ITEMS = [
 
 const ADMIN_ONLY_ITEMS = [
   ["Creeper Spawn Egg", "minecraft:creeper_spawn_egg"],
+  ["Armadillo Spawn Egg", "minecraft:armadillo_spawn_egg"],
+  ["Bat Spawn Egg", "minecraft:bat_spawn_egg"],
   ["Zombie Spawn Egg", "minecraft:zombie_spawn_egg"],
   ["Skeleton Spawn Egg", "minecraft:skeleton_spawn_egg"],
   ["Spider Spawn Egg", "minecraft:spider_spawn_egg"],
   ["Cave Spider Spawn Egg", "minecraft:cave_spider_spawn_egg"],
+  ["Cod Spawn Egg", "minecraft:cod_spawn_egg"],
   ["Enderman Spawn Egg", "minecraft:enderman_spawn_egg"],
+  ["Endermite Spawn Egg", "minecraft:endermite_spawn_egg"],
   ["Witch Spawn Egg", "minecraft:witch_spawn_egg"],
   ["Slime Spawn Egg", "minecraft:slime_spawn_egg"],
   ["Drowned Spawn Egg", "minecraft:drowned_spawn_egg"],
@@ -112,6 +116,7 @@ const ADMIN_ONLY_ITEMS = [
   ["Donkey Spawn Egg", "minecraft:donkey_spawn_egg"],
   ["Fox Spawn Egg", "minecraft:fox_spawn_egg"],
   ["Frog Spawn Egg", "minecraft:frog_spawn_egg"],
+  ["Glow Squid Spawn Egg", "minecraft:glow_squid_spawn_egg"],
   ["Goat Spawn Egg", "minecraft:goat_spawn_egg"],
   ["Horse Spawn Egg", "minecraft:horse_spawn_egg"],
   ["Llama Spawn Egg", "minecraft:llama_spawn_egg"],
@@ -122,13 +127,25 @@ const ADMIN_ONLY_ITEMS = [
   ["Parrot Spawn Egg", "minecraft:parrot_spawn_egg"],
   ["Pig Spawn Egg", "minecraft:pig_spawn_egg"],
   ["Polar Bear Spawn Egg", "minecraft:polar_bear_spawn_egg"],
+  ["Pufferfish Spawn Egg", "minecraft:pufferfish_spawn_egg"],
   ["Rabbit Spawn Egg", "minecraft:rabbit_spawn_egg"],
+  ["Salmon Spawn Egg", "minecraft:salmon_spawn_egg"],
+  ["Silverfish Spawn Egg", "minecraft:silverfish_spawn_egg"],
+  ["Skeleton Horse Spawn Egg", "minecraft:skeleton_horse_spawn_egg"],
   ["Sheep Spawn Egg", "minecraft:sheep_spawn_egg"],
   ["Sniffer Spawn Egg", "minecraft:sniffer_spawn_egg"],
+  ["Squid Spawn Egg", "minecraft:squid_spawn_egg"],
   ["Strider Spawn Egg", "minecraft:strider_spawn_egg"],
   ["Tadpole Spawn Egg", "minecraft:tadpole_spawn_egg"],
   ["Turtle Spawn Egg", "minecraft:turtle_spawn_egg"],
+  ["Trader Llama Spawn Egg", "minecraft:trader_llama_spawn_egg"],
+  ["Tropical Fish Spawn Egg", "minecraft:tropical_fish_spawn_egg"],
   ["Wolf Spawn Egg", "minecraft:wolf_spawn_egg"],
+  ["Vex Spawn Egg", "minecraft:vex_spawn_egg"],
+  ["Warden Spawn Egg", "minecraft:warden_spawn_egg"],
+  ["Zombie Horse Spawn Egg", "minecraft:zombie_horse_spawn_egg"],
+  ["Zombie Villager Spawn Egg", "minecraft:zombie_villager_spawn_egg"],
+  ["Zombified Piglin Spawn Egg", "minecraft:zombified_piglin_spawn_egg"],
   ["Spawner", "minecraft:mob_spawner"]
 ];
 
@@ -172,7 +189,7 @@ function savePrices(prices) {
 }
 
 function balanceKey(player) {
-  return BALANCE_PREFIX + player.id.replace(/[^a-zA-Z0-9_-]/g, "_");
+  return BALANCE_PREFIX + player.name.toLowerCase().replace(/[^a-z0-9_-]/g, "_");
 }
 
 function getBalance(player) {
