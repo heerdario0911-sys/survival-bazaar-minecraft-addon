@@ -145,10 +145,11 @@ export function migrateLegacyPlayerData(player) {
 
     const state = loadState();
 
-    if (!Number.isSafeInteger(state.accounts[player.id])) {
-        const namedBalance = Number(state.accounts[player.name]);
-        const oldPlayerBalance = Number(player.getDynamicProperty("sb_coins"));
+    const hadIdBalance = Number.isSafeInteger(state.accounts[player.id]);
+    const namedBalance = Number(state.accounts[player.name]);
+    const oldPlayerBalance = Number(player.getDynamicProperty("sb_coins"));
 
+    if (!hadIdBalance) {
         if (Number.isSafeInteger(namedBalance) && namedBalance >= 0) {
             state.accounts[player.id] = namedBalance;
         } else if (Number.isSafeInteger(oldPlayerBalance) && oldPlayerBalance >= 0) {
@@ -156,6 +157,13 @@ export function migrateLegacyPlayerData(player) {
         } else {
             state.accounts[player.id] = STARTING_BALANCE_CENTS;
         }
+    } else if (
+        player.name !== player.id &&
+        Number.isSafeInteger(namedBalance) &&
+        namedBalance > 0
+    ) {
+        // Older offline sales may have been credited under the seller's name.
+        state.accounts[player.id] += namedBalance;
     }
 
     if (state.accounts[player.name] !== undefined && player.name !== player.id) {
