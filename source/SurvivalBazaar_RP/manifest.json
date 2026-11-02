@@ -1,17 +1,24 @@
 {
   "format_version": 2,
   "header": {
-    "name": "Survival Bazaar - Möbel & Texturen",
-    "description": "Eigene moderne 3D-Möbelmodelle und Texturen",
-    "uuid": "d4e5f6a7-b8c9-401d-2e3f-4a5b6c7d8e9f",
-    "version": [1, 4, 8],
-    "min_engine_version": [1, 21, 0]
+    "name": "SurvivalBazaar RP",
+    "description": "Resource Pack for SurvivalBazaar",
+    "uuid": "d474749e-9113-4f05-aafe-312910f5a644",
+    "version": [1, 1, 0],
+    "min_engine_version": [1, 26, 30]
   },
   "modules": [
     {
       "type": "resources",
-      "uuid": "e5f6a7b8-c9d0-412e-3f4a-5b6c7d8e9f0a",
-      "version": [1, 4, 8]
+      "uuid": "4a95d88e-6d67-4dee-bf0a-f23a1e559d89",
+      "version": [1, 1, 0],
+      "description": "Resource Pack for SurvivalBazaar"
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "31fff073-83ea-4e55-9158-9aa0ce4eca2c",
+      "version": [1, 1, 0]
     }
   ]
 }
