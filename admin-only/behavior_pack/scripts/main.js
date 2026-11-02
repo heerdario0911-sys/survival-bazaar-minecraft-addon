@@ -205,7 +205,7 @@ function showMainMenu(player) {
   if (!isAuthorized(player)) return;
   const form = new ActionFormData()
     .title("§6SurvivalBazaar | Admin")
-    .body("§7Angemeldet: §f" + AUTHORIZED_ADMIN +
+    .body("§7Angemeldet: §f" + player.name +
       "\n§aAdmin-System aktiv" +
       "\n\n§7Wähle eine Verwaltungsfunktion.")
     .button("§ePreise verwalten\n§8Preise für Items festlegen")
