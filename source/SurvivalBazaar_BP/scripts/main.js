@@ -8,7 +8,6 @@ function addBazaarTextField(form, label, placeholder, defaultValue = "") {
   return form.textField(String(label), String(placeholder), { defaultValue: String(defaultValue ?? "") });
 }
 
-const ADMIN_GAMERTAGS = new Set(["Skillet8736", "Kiwi175031"].map(name => name.toLocaleLowerCase("en-US")));
 const CURRENCY = "€";
 const STARTING_BALANCE_CENTS = 10000;
 const formatMoney = cents => (cents / 100).toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " " + CURRENCY;
@@ -819,7 +818,7 @@ async function openAdminSpawnItems(player, page = 0) {
   const start = page * pageSize;
   const shown = entries.slice(start, start + pageSize);
   const form = new ActionFormData().title("§l§dSPAWN-EIER & SPAWNER")
-    .body("§7Dieser Bereich ist ausschließlich für freigeschaltete Admins.
+    .body("§7Admin-Funktionen sind für alle Spieler verfügbar.
 §7Seite " + (page + 1) + "/" + Math.ceil(entries.length / pageSize));
   for (const item of shown) form.button(item.name);
   if (page > 0) form.button("§7Vorherige Seite");
@@ -858,7 +857,7 @@ async function openAdminMenu(player) {
     .body("§7Preise werden dauerhaft in den Weltdaten gespeichert.")
     .button("§aKaufpreise bearbeiten\n§7Server-Shop")
     .button("§eVerkaufspreise bearbeiten\n§7Verkaufskatalog")
-    .button("§dSpawn-Eier & Spawner\n§7Nur für freigeschaltete Admins")
+    .button("§dSpawn-Eier & Spawner\n§7Für alle Spieler verfügbar")
     .button("§bTextfeld-Kompatibilität testen\n§7Diagnose für Minecraft 26.60")
     .button("§7Schließen");
   const res = await form.show(player);
@@ -1046,7 +1045,7 @@ system.beforeEvents.startup.subscribe(({ customCommandRegistry }) => {
   customCommandRegistry.registerCommand(
     {
       name: "survivalbazaar:admin",
-      description: "Öffnet die geschützte Admin-Verwaltung des Survival Bazaar.",
+      description: "Öffnet die Admin-Verwaltung des Survival Bazaar für jeden Spieler.",
       permissionLevel: CommandPermissionLevel.Any,
       cheatsRequired: false
     },
@@ -1054,14 +1053,6 @@ system.beforeEvents.startup.subscribe(({ customCommandRegistry }) => {
       const player = origin.initiator ?? origin.sourceEntity;
       if (!(player instanceof Player)) {
         return { status: CustomCommandStatus.Failure, message: "Dieser Befehl kann nur von Spielern verwendet werden." };
-      }
-      // Kein Operator-Zwang: Die Berechtigung wird ausschließlich über die Gamertag-Freigabe geprüft.
-      const caller = String(player.name ?? "").toLocaleLowerCase("en-US");
-      if (!ADMIN_GAMERTAGS.has(caller)) {
-        return {
-          status: CustomCommandStatus.Failure,
-          message: "§cKeine Berechtigung: /admin ist nur für Skillet8736 und Kiwi175031 freigegeben."
-        };
       }
       system.run(() => openAdminMenu(player).catch((error) => tell(player, "Admin-Menü-Fehler: " + (error?.message ?? String(error)))));
       return { status: CustomCommandStatus.Success };
