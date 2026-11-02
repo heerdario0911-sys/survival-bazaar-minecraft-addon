@@ -1,11 +1,11 @@
 import { world, system, ItemStack, ItemTypes, CommandPermissionLevel, CustomCommandStatus, Player } from "@minecraft/server";
 import { ActionFormData, ModalFormData, MessageFormData } from "@minecraft/server-ui";
 
-// Alle Textfelder laufen zentral über diese 2-Argumente-Variante.
-// Damit kann kein alter String-Defaultwert versehentlich als Optionsobjekt landen.
-function addBazaarTextField(form, label, placeholder) {
+// Alle Textfelder verwenden das Optionsobjekt der Bedrock-26.60-UI-API.
+// Ein String als drittes Argument ist ungültig und löst Native-Type-Conversion-Fehler aus.
+function addBazaarTextField(form, label, placeholder, defaultValue = "") {
   if (!form || typeof form.textField !== "function") throw new TypeError("ModalFormData.textField ist nicht verfügbar.");
-  return form.textField(String(label), String(placeholder));
+  return form.textField(String(label), String(placeholder), { defaultValue: String(defaultValue ?? "") });
 }
 
 const ADMIN_GAMERTAGS = new Set(["Skillet8736", "Kiwi175031"].map(name => name.toLocaleLowerCase("en-US")));
@@ -1016,7 +1016,7 @@ system.beforeEvents.startup.subscribe(({ customCommandRegistry }) => {
       cheatsRequired: false
     },
     (origin) => {
-      const player = origin.sourceEntity;
+      const player = origin.initiator ?? origin.sourceEntity;
       if (!(player instanceof Player)) {
         return { status: CustomCommandStatus.Failure, message: "Dieser Befehl kann nur von Spielern verwendet werden." };
       }
