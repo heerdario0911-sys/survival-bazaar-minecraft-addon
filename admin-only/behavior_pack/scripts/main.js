@@ -7,7 +7,7 @@ import {
 } from "@minecraft/server";
 import { ActionFormData, ModalFormData } from "@minecraft/server-ui";
 
-const AUTHORIZED_ADMIN = "Skillet8736";
+const AUTHORIZED_ADMINS = new Set(["Skillet8736", "Kiwi175031"]);
 const ADMIN_COMMAND = "survivalbazaar:admin";
 const PRICE_PROPERTY = "sb_admin_prices_v1";
 const BALANCE_PREFIX = "sb_admin_coins_";
@@ -154,7 +154,7 @@ system.beforeEvents.startup.subscribe((event) => {
     {
       name: ADMIN_COMMAND,
       description: "Opens the private SurvivalBazaar admin panel.",
-      permissionLevel: CommandPermissionLevel.Admin,
+      permissionLevel: CommandPermissionLevel.Any,
       cheatsRequired: false
     },
     (origin) => {
@@ -162,8 +162,8 @@ system.beforeEvents.startup.subscribe((event) => {
       if (!(player instanceof Player)) {
         return { status: CustomCommandStatus.Failure, message: "Only a player can use this command." };
       }
-      if (player.name !== AUTHORIZED_ADMIN) {
-        return { status: CustomCommandStatus.Failure, message: "Access denied. Only Skillet8736 is authorized." };
+      if (!isAuthorized(player)) {
+        return { status: CustomCommandStatus.Failure, message: "Zugriff verweigert. Dieser Admin-Bereich ist nur für freigegebene Namen." };
       }
       system.run(() => showMainMenu(player));
       return { status: CustomCommandStatus.Success, message: "Opening SurvivalBazaar admin panel." };
@@ -172,7 +172,7 @@ system.beforeEvents.startup.subscribe((event) => {
 });
 
 function isAuthorized(player) {
-  return player instanceof Player && player.name === AUTHORIZED_ADMIN;
+  return player instanceof Player && AUTHORIZED_ADMINS.has(player.name);
 }
 
 function getPrices() {
