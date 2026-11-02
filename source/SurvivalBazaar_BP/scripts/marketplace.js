@@ -47,12 +47,37 @@ function loadState() {
     }
 
     const accounts = parseJsonProperty(LEGACY_ACCOUNTS_KEY, {});
-    const listings = parseJsonProperty(LEGACY_LISTINGS_KEY, []);
+    const oldListings = parseJsonProperty(LEGACY_LISTINGS_KEY, []);
+    const sbListings = parseJsonProperty("sb_marketplace", []);
+    const oldPending = parseJsonProperty("sb_pending_payouts", {});
+
+    const migratedSbListings = Array.isArray(sbListings)
+        ? sbListings.map(offer => ({
+            id: String(offer.id ?? (Date.now() + "-" + Math.random())),
+            sellerId: String(offer.seller ?? offer.sellerName ?? "unbekannt"),
+            sellerName: String(offer.seller ?? offer.sellerName ?? "unbekannt"),
+            itemId: String(offer.itemId ?? ""),
+            itemName: String(offer.itemId ?? "Gegenstand"),
+            amount: Number(offer.amount ?? 0),
+            price: Number(offer.price ?? 0),
+            legacy: true
+        })).filter(offer =>
+            offer.itemId &&
+            Number.isSafeInteger(offer.amount) &&
+            offer.amount > 0 &&
+            Number.isSafeInteger(offer.price) &&
+            offer.price > 0
+        )
+        : [];
 
     const state = {
         version: 2,
         accounts: accounts && typeof accounts === "object" && !Array.isArray(accounts) ? accounts : {},
-        listings: Array.isArray(listings) ? listings : [],
+        listings: [
+            ...(Array.isArray(oldListings) ? oldListings : []),
+            ...migratedSbListings
+        ],
+        pendingPayouts: oldPending && typeof oldPending === "object" && !Array.isArray(oldPending) ? oldPending : {},
         pendingTransaction: null
     };
 
@@ -77,6 +102,49 @@ export function getMarketplaceBalance(playerId) {
     }
 
     return state.accounts[playerId];
+}
+
+export function migrateLegacyPlayerData(player) {
+    if (!player || typeof player.id !== "string") return;
+
+    const state = loadState();
+
+    if (!Number.isSafeInteger(state.accounts[player.id])) {
+        const namedBalance = Number(state.accounts[player.name]);
+        const oldPlayerBalance = Number(player.getDynamicProperty("sb_coins"));
+
+        if (Number.isSafeInteger(namedBalance) && namedBalance >= 0) {
+            state.accounts[player.id] = namedBalance;
+        } else if (Number.isSafeInteger(oldPlayerBalance) && oldPlayerBalance >= 0) {
+            state.accounts[player.id] = oldPlayerBalance;
+        } else {
+            state.accounts[player.id] = STARTING_BALANCE_CENTS;
+        }
+    }
+
+    if (state.accounts[player.name] !== undefined && player.name !== player.id) {
+        delete state.accounts[player.name];
+    }
+
+    for (const offer of state.listings) {
+        if (offer.sellerId === player.name) {
+            offer.sellerId = player.id;
+            offer.sellerName = player.name;
+        }
+    }
+
+    const pending = Number(state.pendingPayouts?.[player.name] ?? 0);
+    if (Number.isSafeInteger(pending) && pending > 0) {
+        state.accounts[player.id] =
+            Number(state.accounts[player.id] ?? STARTING_BALANCE_CENTS) + pending;
+        delete state.pendingPayouts[player.name];
+    }
+
+    saveState(state);
+
+    try {
+        player.setDynamicProperty("sb_coins", undefined);
+    } catch {}
 }
 
 export function setMarketplaceBalance(playerId, amount) {
@@ -368,6 +436,50 @@ function getOfferStack(offer, containers) {
     return containers[offer.storageIndex]?.getItem(offer.storageSlot);
 }
 
+function ensureOfferStored(offer, containers) {
+    if (
+        Number.isInteger(offer.storageIndex) &&
+        Number.isInteger(offer.storageSlot)
+    ) {
+        return {
+            offer,
+            containers,
+            stack: getOfferStack(offer, containers)
+        };
+    }
+
+    const state = loadState();
+    const target = state.listings.find(item => item.id === offer.id);
+    if (!target) return undefined;
+
+    const free = findFreeStorageSlot(state, containers);
+    if (!free) return undefined;
+
+    try {
+        const stack = new ItemStack(target.itemId, target.amount);
+        containers[free.storageIndex].setItem(free.storageSlot, stack);
+
+        target.storageIndex = free.storageIndex;
+        target.storageSlot = free.storageSlot;
+        target.storageV2 = true;
+
+        try {
+            saveState(state);
+        } catch (error) {
+            containers[free.storageIndex].setItem(free.storageSlot, undefined);
+            throw error;
+        }
+
+        return {
+            offer: target,
+            containers,
+            stack
+        };
+    } catch {
+        return undefined;
+    }
+}
+
 function prepareTransaction(type, offer, player) {
     const state = loadState();
 
@@ -413,7 +525,7 @@ async function buyOffer(player, offerId, ui) {
         return;
     }
 
-    const offer = current.offer;
+    let offer = current.offer;
 
     if (offer.sellerId === player.id) {
         ui.tell(player, "Du kannst dein eigenes Angebot nicht kaufen.");
@@ -440,43 +552,16 @@ async function buyOffer(player, offerId, ui) {
         return;
     }
 
-    let stack = getOfferStack(offer, containers);
+    const stored = ensureOfferStored(offer, containers);
 
-    // Older listings are moved into the hidden storage before they can be bought.
-    if (!stack && !Number.isInteger(offer.storageIndex)) {
-        try {
-            const legacyStack = new ItemStack(offer.itemId, offer.amount);
-            const free = findFreeStorageSlot(current.state, containers);
-
-            if (!free) {
-                ui.tell(player, "Der Marktplatz-Speicher ist voll. Dieses alte Angebot kann nicht übernommen werden.");
-                return;
-            }
-
-            containers[free.storageIndex].setItem(
-                free.storageSlot,
-                legacyStack
-            );
-
-            const refreshed = loadState();
-            const target = refreshed.listings.find(item => item.id === offer.id);
-
-            if (!target) {
-                containers[free.storageIndex].setItem(free.storageSlot, undefined);
-                return;
-            }
-
-            target.storageIndex = free.storageIndex;
-            target.storageSlot = free.storageSlot;
-            target.storageV2 = true;
-            saveState(refreshed);
-
-            stack = legacyStack;
-        } catch {
-            ui.tell(player, "Der Gegenstand dieses alten Angebots konnte nicht wiederhergestellt werden.");
-            return;
-        }
+    if (!stored) {
+        ui.tell(player, "Der Gegenstand dieses Angebots konnte nicht wiederhergestellt werden.");
+        return;
     }
+
+    offer = stored.offer;
+    containers = stored.containers;
+    const stack = stored.stack;
 
     if (!stack) {
         ui.tell(player, "Der angebotene Gegenstand fehlt im Marktplatz-Lager. Bitte informiere den Admin.");
@@ -586,7 +671,7 @@ async function cancelOffer(player, offerId, ui) {
         return;
     }
 
-    const offer = current.offer;
+    let offer = current.offer;
     const inventory = player.getComponent("minecraft:inventory")?.container;
 
     if (!inventory) {
@@ -603,12 +688,16 @@ async function cancelOffer(player, offerId, ui) {
         return;
     }
 
-    const stack = getOfferStack(offer, containers);
+    const stored = ensureOfferStored(offer, containers);
 
-    if (!stack) {
+    if (!stored || !stored.stack) {
         ui.tell(player, "Der Gegenstand fehlt im Marktplatz-Lager. Bitte informiere den Admin.");
         return;
     }
+
+    offer = stored.offer;
+    containers = stored.containers;
+    const stack = stored.stack;
 
     if (!canFitExactStack(inventory, stack)) {
         ui.tell(player, "Dein Inventar hat nicht genug Platz für die Rückgabe.");
