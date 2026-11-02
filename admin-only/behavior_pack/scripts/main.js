@@ -219,13 +219,13 @@ function showMainMenu(player) {
     if (r.selection === 1) showPlayerList(player, "coins");
     if (r.selection === 2) showPlayerList(player, "give");
     if (r.selection === 3) showPlayerList(player, "adminItems");
-  }).catch(() => player.sendMessage("§c[SurvivalBazaar] Admin-Menü konnte nicht geöffnet werden."));
+  }).catch((error) => player.sendMessage("§c[SurvivalBazaar] Admin-Menü-Fehler: " + (error?.message ?? String(error))));
 }
 
 function showSearchPrompt(player, title, onSearch) {
   const form = new ModalFormData()
     .title(title)
-    .textField("Suchbegriff", "z. B. Holz, Diamant, Spawn-Ei", "");
+    .textField("Suchbegriff", "z. B. Holz, Diamant, Spawn-Ei", { defaultValue: "" });
   form.show(player).then((r) => {
     if (r.canceled) return;
     onSearch(String(r.formValues?.[0] ?? "").trim().toLowerCase());
@@ -274,7 +274,7 @@ function showPriceEditor(player, label, id, page, query) {
   const oldPrice = Number(getPrices()[id] ?? 0);
   const form = new ModalFormData()
     .title("Preis bearbeiten")
-    .textField(label + " – Preis in Coins", "Nur ganze Zahlen ab 0", String(oldPrice));
+    .textField(label + " – Preis in Coins", "Nur ganze Zahlen ab 0", { defaultValue: String(oldPrice) });
   form.show(player).then((r) => {
     if (r.canceled) return showPriceCatalog(player, page, query);
     const value = Number(r.formValues?.[0]);
@@ -320,7 +320,7 @@ function showCoinEditor(admin, target) {
   const form = new ModalFormData()
     .title("Coins verwalten: " + target.name)
     .dropdown("Aktion", ["Coins hinzufügen", "Guthaben festlegen", "Coins abziehen"], 0)
-    .textField("Betrag", "Ganze Zahl ab 0", "100");
+    .textField("Betrag", "Ganze Zahl ab 0", { defaultValue: "100" });
   form.show(admin).then((r) => {
     if (r.canceled) return showPlayerList(admin, "coins");
     const action = Number(r.formValues?.[0] ?? 0);
@@ -380,7 +380,7 @@ function showGiveAmount(admin, target, item, back) {
   const [label, id] = item;
   const form = new ModalFormData()
     .title("Item ausgeben")
-    .textField(label + " – Anzahl", "1 bis 64", "1");
+    .textField(label + " – Anzahl", "1 bis 64", { defaultValue: "1" });
   form.show(admin).then((r) => {
     if (r.canceled) return back();
     const amount = Number(r.formValues?.[0]);
