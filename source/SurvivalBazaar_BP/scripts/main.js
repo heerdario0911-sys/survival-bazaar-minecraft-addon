@@ -587,6 +587,7 @@ async function checkoutBuyBasket(player, returnTo) {
 }
 
 async function openBuyShop(player) {
+  buildCompleteCatalog();
   const cart = getBuyCart(player);
   const form = new ActionFormData().title("§l§aITEMS KAUFEN")
     .body("§7Wähle eine Kategorie oder suche direkt im gesamten Katalog.\n§7Warenkorb: §e" + cart.size + " verschiedene Items – " + formatMoney(cartTotal(cart)))
@@ -628,11 +629,14 @@ async function openBuySearch(player) {
 }
 
 async function showBuySearchResults(player, query, page) {
+  const isWoodSearch = /^(holz|wood|holzartikel|holzbauteile)$/.test(query);
+  const woodIdPattern = /^minecraft:(oak|spruce|birch|jungle|acacia|dark_oak|mangrove|cherry|bamboo)_(log|wood|planks|stairs|slab|fence|fence_gate|door|trapdoor|button|pressure_plate|sign|hanging_sign)|^minecraft:(crimson|warped)_(stem|hyphae|planks|stairs|slab|fence|fence_gate|door|trapdoor|button|pressure_plate|sign|hanging_sign)/;
   const matches = allBuyEntries().filter(item =>
     item.name.toLocaleLowerCase("de-DE").includes(query) ||
     item.id.toLowerCase().includes(query) ||
     item.category.toLocaleLowerCase("de-DE").includes(query) ||
-    item.group.toLocaleLowerCase("de-DE").includes(query)
+    item.group.toLocaleLowerCase("de-DE").includes(query) ||
+    (isWoodSearch && woodIdPattern.test(item.id))
   );
   if (!matches.length) {
     tell(player, "Keine Gegenstände für „" + query + "“ gefunden.");
@@ -704,6 +708,7 @@ async function purchaseBuyEntry(player, entry, returnTo) {
 }
 
 async function openSellCategories(player) {
+  buildCompleteCatalog();
   const form = new ActionFormData().title("§l§cITEMS VERKAUFEN").body("§7Wähle eine Hauptkategorie.");
   for (const category of SELL_CATEGORIES) form.button("§e" + category.name);
   form.button("§7Zurück");
