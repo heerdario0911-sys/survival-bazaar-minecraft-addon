@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -16,7 +16,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: JavaScript-Syntax prüfen
-        run: node --check source/SurvivalBazaar_BP/scripts/main.js
+        run: |
+          node --check source/SurvivalBazaar_BP/scripts/main.js
+          node --check source/SurvivalBazaar_BP/scripts/marketplace.js
       - name: PNG-Dateiköpfe normalisieren
         run: |
           python3 - <<'PY'
@@ -185,6 +187,15 @@ jobs:
           cd dist
           zip -q SurvivalBazaar.mcaddon SurvivalBazaar_BP.mcpack SurvivalBazaar_RP.mcpack
           unzip -t SurvivalBazaar.mcaddon
+      - name: Fertiges MCAddon im Repository ablegen
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add dist/SurvivalBazaar.mcaddon
+          if ! git diff --cached --quiet; then
+            git commit -m "Build SurvivalBazaar Bedrock 26.60 package"
+            git push
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: SurvivalBazaar-Bedrock-26.60
