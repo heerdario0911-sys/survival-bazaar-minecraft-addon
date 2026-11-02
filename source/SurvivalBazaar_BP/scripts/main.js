@@ -10,7 +10,6 @@ function addBazaarTextField(form, label, placeholder, defaultValue = "") {
 }
 
 const CURRENCY = "€";
-const ADMIN = "Skillet8736";
 const STARTING_BALANCE_CENTS = 10000;
 const formatMoney = cents => (cents / 100).toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " " + CURRENCY;
 const parseMoneyToCents = value => {
@@ -848,10 +847,6 @@ async function openAdminSpawnItems(player, page = 0) {
 }
 
 async function openAdminMenu(player) {
-  if (player.name !== ADMIN) {
-    tell(player, "§cKeine Admin-Berechtigung.");
-    return;
-  }
   const form = new ActionFormData().title("§l§cBAZAAR-ADMIN")
     .body("§7Preise werden dauerhaft in den Weltdaten gespeichert.")
     .button("§aKaufpreise bearbeiten\n§7Server-Shop")
@@ -999,7 +994,7 @@ system.beforeEvents.startup.subscribe(({ customCommandRegistry }) => {
   customCommandRegistry.registerCommand(
     {
       name: "survivalbazaar:admin",
-      description: "Öffnet die Admin-Verwaltung des Survival Bazaar (nur Skillet8736).",
+      description: "Öffnet die Admin-Verwaltung des Survival Bazaar für alle Spieler.",
       permissionLevel: CommandPermissionLevel.Any,
       cheatsRequired: false
     },
@@ -1007,9 +1002,6 @@ system.beforeEvents.startup.subscribe(({ customCommandRegistry }) => {
       const player = origin.initiator ?? origin.sourceEntity;
       if (!(player instanceof Player)) {
         return { status: CustomCommandStatus.Failure, message: "Dieser Befehl kann nur von Spielern verwendet werden." };
-      }
-      if (player.name !== ADMIN) {
-        return { status: CustomCommandStatus.Failure, message: "Keine Admin-Berechtigung." };
       }
       system.run(() => openAdminMenu(player).catch((error) => tell(player, "Admin-Menü-Fehler: " + (error?.message ?? String(error)))));
       return { status: CustomCommandStatus.Success };
