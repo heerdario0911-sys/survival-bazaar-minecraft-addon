@@ -201,7 +201,7 @@ function ensureStorage() {
         dimension.runCommand(
             "tickingarea add circle " +
             STORAGE_BASE.x + " 0 " +
-            STORAGE_BASE.z + " 2 survivalbazaar_market"
+            STORAGE_BASE.z + " 2 sb_market"
         );
     } catch {
         // An existing ticking area with this name is expected on later loads.
