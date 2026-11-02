@@ -1,5 +1,6 @@
 import { world, system, ItemStack, ItemTypes, CommandPermissionLevel, CustomCommandStatus, Player } from "@minecraft/server";
 import { ActionFormData, ModalFormData, MessageFormData } from "@minecraft/server-ui";
+import { getMarketplaceAccounts, getMarketplaceListings, getMarketplaceBalance, setMarketplaceBalance, openPlayerMarketplace, initializeMarketplace, migrateLegacyPlayerData } from "./marketplace.js";
 
 // Alle Textfelder verwenden das Optionsobjekt der Bedrock-26.60-UI-API.
 // Ein String als drittes Argument ist ungültig und löst Native-Type-Conversion-Fehler aus.
@@ -9,6 +10,7 @@ function addBazaarTextField(form, label, placeholder, defaultValue = "") {
 }
 
 const CURRENCY = "€";
+const ADMIN = "Skillet8736";
 const STARTING_BALANCE_CENTS = 10000;
 const formatMoney = cents => (cents / 100).toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " " + CURRENCY;
 const parseMoneyToCents = value => {
@@ -357,8 +359,8 @@ function writeJson(key, value) {
   if (raw.length > 30000) throw new Error("Der Bazaar-Speicher ist voll.");
   world.setDynamicProperty(key, raw);
 }
-function accounts() { return readJson(ACCOUNTS_KEY, {}); }
-function listings() { return readJson(LISTINGS_KEY, []); }
+function accounts() { return getMarketplaceAccounts(); }
+function listings() { return getMarketplaceListings(); }
 function priceOverrides() { return readJson(PRICES_KEY, {}); }
 function getPriceCents(itemId, side, fallbackEuro) {
   const saved = priceOverrides()[itemId + ":" + side];
@@ -370,17 +372,10 @@ function setPriceCents(itemId, side, cents) {
   writeJson(PRICES_KEY, data);
 }
 function balance(player) {
-  const data = accounts();
-  if (typeof data[player.id] !== "number") {
-    data[player.id] = STARTING_BALANCE_CENTS;
-    writeJson(ACCOUNTS_KEY, data);
-  }
-  return data[player.id];
+  return getMarketplaceBalance(player.id);
 }
 function setBalance(id, amount) {
-  const data = accounts();
-  data[id] = Math.max(0, Math.round(amount));
-  writeJson(ACCOUNTS_KEY, data);
+  setMarketplaceBalance(id, Math.max(0, Math.round(amount)));
 }
 function tell(player, message) {
   try { player.sendMessage("§6[Bazaar] §r" + message); } catch {}
@@ -853,6 +848,10 @@ async function openAdminSpawnItems(player, page = 0) {
 }
 
 async function openAdminMenu(player) {
+  if (player.name !== ADMIN) {
+    tell(player, "§cKeine Admin-Berechtigung.");
+    return;
+  }
   const form = new ActionFormData().title("§l§cBAZAAR-ADMIN")
     .body("§7Preise werden dauerhaft in den Weltdaten gespeichert.")
     .button("§aKaufpreise bearbeiten\n§7Server-Shop")
@@ -954,56 +953,11 @@ async function openAdminSellItems(player, category, group) {
 }
 
 async function openMarket(player) {
-  const offers = listings().filter(x => x && x.id && x.sellerId !== player.id);
-  const form = new ActionFormData().title("§l§bSPIELER-MARKTPLATZ")
-    .body("§7Angebote anderer Spieler. Dein Guthaben: §6" + formatMoney(balance(player)));
-  for (const offer of offers.slice(0, 25)) form.button(offer.itemName + " ×" + offer.amount + "\n§6" + formatMoney(offer.price) + " §8| §7von " + offer.sellerName);
-  form.button("§aEigenes Item anbieten");
-  form.button("Zurück");
-  const res = await form.show(player);
-  if (res.canceled) return;
-  if (res.selection === offers.slice(0,25).length) return createListing(player);
-  if (res.selection === offers.slice(0,25).length + 1) return openMain(player);
-  const offer = offers[res.selection];
-  if (!offer) return openMarket(player);
-  const confirm = new MessageFormData().title("Angebot kaufen").body(offer.amount + "× " + offer.itemName + " von " + offer.sellerName + " für " + formatMoney(offer.price) + " kaufen?")
-    .button1("Kaufen").button2("Abbrechen");
-  const c = await confirm.show(player);
-  if (c.canceled || c.selection !== 0) return openMarket(player);
-  const current = listings();
-  const idx = current.findIndex(x => x.id === offer.id);
-  if (idx < 0) { tell(player, "Dieses Angebot ist nicht mehr verfügbar."); return openMarket(player); }
-  if (balance(player) < offer.price) { tell(player, "Du hast nicht genug Guthaben."); return openMarket(player); }
-  if (!addItem(player, offer.itemId, offer.amount)) { tell(player, "Dein Inventar ist voll."); return openMarket(player); }
-  setBalance(player.id, balance(player) - offer.price);
-  setBalance(offer.sellerId, (accounts()[offer.sellerId] ?? 0) + offer.price);
-  current.splice(idx, 1);
-  writeJson(LISTINGS_KEY, current);
-  tell(player, "Angebot gekauft. " + formatMoney(offer.price) + " wurden überwiesen.");
-  return openMarket(player);
-}
-async function createListing(player) {
-  const inv = player.getComponent("minecraft:inventory")?.container;
-  const held = inv?.getItem(player.selectedSlotIndex);
-  if (!held) { tell(player, "Halte das Item, das du anbieten möchtest, in der Hand."); return openMarket(player); }
-  const itemId = held.typeId;
-  const itemName = held.nameTag || itemId.replace("minecraft:", "").replaceAll("_", " ");
-  const modal = new ModalFormData().title("Item anbieten");
-  addBazaarTextField(modal, "Anzahl (max. 64)", "z. B. 1");
-  addBazaarTextField(modal, "Gesamtpreis in Euro (€)", "z. B. 12,50 €");
-  const res = await modal.show(player);
-  if (res.canceled) return openMarket(player);
-  const amount = Math.floor(Number(res.formValues?.[0]));
-  const price = parseMoneyToCents(res.formValues?.[1]);
-  if (!Number.isInteger(amount) || amount < 1 || amount > held.amount || amount > 64 || !Number.isInteger(price) || price < 1) {
-    tell(player, "Ungültige Anzahl oder Preis."); return openMarket(player);
-  }
-  if (!removeItems(player, itemId, amount)) { tell(player, "Item konnte nicht entnommen werden."); return openMarket(player); }
-  const all = listings();
-  all.push({ id: String(Date.now()) + "-" + player.id, sellerId: player.id, sellerName: player.name, itemId, itemName, amount, price });
-  try { writeJson(LISTINGS_KEY, all); tell(player, "Dein Angebot wurde eingestellt."); }
-  catch { addItem(player, itemId, amount); tell(player, "Marktplatz voll – Item zurückgegeben."); }
-  return openMarket(player);
+  return openPlayerMarketplace(player, {
+    getBalance: id => getMarketplaceBalance(id),
+    formatMoney,
+    tell
+  });
 }
 // Eigene Chat-Befehle. Bedrock registriert zusätzlich kurze Chat-Aliase.
 system.beforeEvents.startup.subscribe(({ customCommandRegistry }) => {
@@ -1045,7 +999,7 @@ system.beforeEvents.startup.subscribe(({ customCommandRegistry }) => {
   customCommandRegistry.registerCommand(
     {
       name: "survivalbazaar:admin",
-      description: "Öffnet die Admin-Verwaltung des Survival Bazaar für jeden Spieler.",
+      description: "Öffnet die Admin-Verwaltung des Survival Bazaar (nur Skillet8736).",
       permissionLevel: CommandPermissionLevel.Any,
       cheatsRequired: false
     },
@@ -1053,6 +1007,9 @@ system.beforeEvents.startup.subscribe(({ customCommandRegistry }) => {
       const player = origin.initiator ?? origin.sourceEntity;
       if (!(player instanceof Player)) {
         return { status: CustomCommandStatus.Failure, message: "Dieser Befehl kann nur von Spielern verwendet werden." };
+      }
+      if (player.name !== ADMIN) {
+        return { status: CustomCommandStatus.Failure, message: "Keine Admin-Berechtigung." };
       }
       system.run(() => openAdminMenu(player).catch((error) => tell(player, "Admin-Menü-Fehler: " + (error?.message ?? String(error)))));
       return { status: CustomCommandStatus.Success };
@@ -1246,6 +1203,7 @@ world.afterEvents.playerInteractWithBlock.subscribe(event => {
 });
 
 world.afterEvents.playerSpawn.subscribe(ev => {
+  migrateLegacyPlayerData(ev.player);
   if (ev.initialSpawn) {
     const p = ev.player;
     system.runTimeout(() => {
@@ -1256,8 +1214,6 @@ world.afterEvents.playerSpawn.subscribe(ev => {
 });
 world.afterEvents.worldLoad.subscribe(() => {
   buildCompleteCatalog();
-  // Initialisiert den globalen Speicher beim Laden der Welt.
-  if (typeof world.getDynamicProperty(ACCOUNTS_KEY) !== "string") writeJson(ACCOUNTS_KEY, {});
-  if (typeof world.getDynamicProperty(LISTINGS_KEY) !== "string") writeJson(LISTINGS_KEY, []);
+  initializeMarketplace();
   if (typeof world.getDynamicProperty(PRICES_KEY) !== "string") writeJson(PRICES_KEY, {});
 });
