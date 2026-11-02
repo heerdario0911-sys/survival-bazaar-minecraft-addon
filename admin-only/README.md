@@ -28,4 +28,4 @@ Configured for Minecraft Bedrock 1.26.60 / 26.60 with:
 - `@minecraft/server-ui` 2.3.0
 
 ## Test status
-The files have been committed to branch `admin-only-foundation` and are included in PR #1. The pack has not yet been run inside the user's Xbox world. Verify command registration and each item identifier in a copy of the world before enabling it in the main save.
+The changes have been merged into the repository's `main` branch (PR #1). The pack has not yet been run inside the user's Xbox world. Verify command registration and each item identifier in a copy of the world before enabling it in the main save.
