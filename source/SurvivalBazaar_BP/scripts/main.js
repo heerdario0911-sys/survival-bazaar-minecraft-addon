@@ -1034,7 +1034,7 @@ system.beforeEvents.startup.subscribe(({ customCommandRegistry }) => {
       cheatsRequired: false
     },
     (origin) => {
-      const player = origin.sourceEntity;
+      const player = origin.initiator ?? origin.sourceEntity;
       if (!(player instanceof Player)) {
         return { status: CustomCommandStatus.Failure, message: "Dieser Befehl kann nur von Spielern verwendet werden." };
       }
@@ -1051,7 +1051,7 @@ system.beforeEvents.startup.subscribe(({ customCommandRegistry }) => {
       cheatsRequired: false
     },
     (origin) => {
-      const player = origin.sourceEntity;
+      const player = origin.initiator ?? origin.sourceEntity;
       if (!(player instanceof Player)) {
         return { status: CustomCommandStatus.Failure, message: "Dieser Befehl kann nur von Spielern verwendet werden." };
       }
