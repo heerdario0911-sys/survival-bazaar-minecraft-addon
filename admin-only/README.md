@@ -1,27 +1,31 @@
 # SurvivalBazaar – Admin Only
 
-A separate Bedrock Behavior Pack foundation. It does not contain or load the old shop/furniture implementation.
+This is a separate, clean Minecraft Bedrock Behavior Pack. It does not reuse or load the previous shop/furniture implementation.
 
 ## Access control
-- Custom command: `/survivalbazaar:admin`
-- Command permission: operator/admin level.
-- Additional exact-name allowlist: `Skillet8736`.
+- Registered command: `survivalbazaar:admin`.
+- Minecraft also exposes the short chat alias `/admin` for a namespaced custom command.
+- Native permission: `CommandPermissionLevel.Admin` (operator command permission).
+- Additional exact player-name allowlist: `Skillet8736`.
 - Other players, including other operators, are rejected by the allowlist check.
 
-## Admin menu functions
-1. **Price management** – searchable, paginated list of common vanilla items; prices are stored as world dynamic properties.
-2. **Player Coins** – view and adjust the virtual Coins balance of online players (add, set, remove). Balances are stored per player in world dynamic properties.
-3. **Give items** – searchable, paginated list of ordinary items, issued to a selected online player.
-4. **Admin items** – separate searchable, paginated list of spawn eggs and the spawner item. These entries exist only in this admin pack's admin menu; they are not placed in a public shop/catalog.
+## Admin menu
+1. **Price management** – searchable, paginated catalog of common vanilla items. Prices are saved as world dynamic properties.
+2. **Player Coins** – view and adjust the Coins balance of online players: add, set, or remove. Balances are stored per player in world dynamic properties.
+3. **Give items** – searchable, paginated catalog of ordinary items, issued to a selected online player.
+4. **Admin items** – separate searchable, paginated catalog of spawn eggs and the spawner item. These are only accessible from the admin menu and are not part of any public shop/catalog.
 
-## Important command note
-The Script API registers a namespaced custom command. Use the fully qualified form `/survivalbazaar:admin`. This pack does not claim that Minecraft exposes an unqualified `/admin` alias on every Bedrock build.
+## Scope
+- No furniture.
+- No resource pack.
+- No player-facing shop or marketplace yet.
+- Spawn eggs and spawner are only in the admin area.
+- Item search and page navigation are included in the item/price lists.
 
-## Install
-Import the `behavior_pack` folder as a Behavior Pack (or package that folder as an `.mcpack`) and activate it in the target world. The pack uses `@minecraft/server` and `@minecraft/server-ui` script modules. If Minecraft prompts for required experimental/script features, enable the ones it requests.
+## Version target
+Configured for Minecraft Bedrock 1.26.60 / 26.60 with:
+- `@minecraft/server` 2.11.0
+- `@minecraft/server-ui` 2.3.0
 
-## Scope and test status
-- No furniture or resource pack.
-- No player-facing shop or marketplace is included yet.
-- No spawn eggs or spawners are exposed outside the admin menu.
-- Code has been committed to the `admin-only-foundation` branch. It still needs an in-world test on the user's exact Bedrock build; command registration, item identifiers, and script API compatibility should be verified before using it in the main world.
+## Test status
+The files have been committed to branch `admin-only-foundation` and are included in PR #1. The pack has not yet been run inside the user's Xbox world. Verify command registration and each item identifier in a copy of the world before enabling it in the main save.
