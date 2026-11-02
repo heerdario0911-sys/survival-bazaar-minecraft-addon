@@ -1,0 +1,41 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "SurvivalBazaar Admin Only",
+    "description": "Separate admin-only Behavior Pack. Authorized operator: Skillet8736.",
+    "uuid": "a8bfa11d-29d9-47c0-8d2a-1e6f24f0b701",
+    "version": [
+      1,
+      0,
+      0
+    ],
+    "min_engine_version": [
+      1,
+      26,
+      60
+    ]
+  },
+  "modules": [
+    {
+      "type": "script",
+      "language": "javascript",
+      "uuid": "f31f7c62-5c30-4e2e-9a8f-f0b2bb7c8f03",
+      "version": [
+        1,
+        0,
+        0
+      ],
+      "entry": "scripts/main.js"
+    }
+  ],
+  "dependencies": [
+    {
+      "module_name": "@minecraft/server",
+      "version": "2.11.0"
+    },
+    {
+      "module_name": "@minecraft/server-ui",
+      "version": "2.3.0"
+    }
+  ]
+}
