@@ -8,6 +8,7 @@ function addBazaarTextField(form, label, placeholder) {
   return form.textField(String(label), String(placeholder));
 }
 
+const ADMIN_GAMERTAG = "Skillet8736";
 const CURRENCY = "€";
 const STARTING_BALANCE_CENTS = 10000;
 const formatMoney = cents => (cents / 100).toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " " + CURRENCY;
@@ -980,6 +981,14 @@ system.beforeEvents.startup.subscribe(({ customCommandRegistry }) => {
       const player = origin.sourceEntity;
       if (!(player instanceof Player)) {
         return { status: CustomCommandStatus.Failure, message: "Dieser Befehl kann nur von Spielern verwendet werden." };
+      }
+      // Die native Admin-Berechtigung prüft bereits Operator-Rechte.
+      // Diese zusätzliche Prüfung beschränkt das Menü auf den festgelegten Gamertag.
+      if (player.name.toLowerCase() !== ADMIN_GAMERTAG.toLowerCase()) {
+        return {
+          status: CustomCommandStatus.Failure,
+          message: "§cKeine Berechtigung: /admin ist nur für " + ADMIN_GAMERTAG + " freigegeben."
+        };
       }
       system.run(() => openAdminMenu(player).catch((error) => tell(player, "Admin-Menü-Fehler: " + (error?.message ?? String(error)))));
       return { status: CustomCommandStatus.Success };
